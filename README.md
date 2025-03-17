@@ -9,10 +9,16 @@ Create a virtual env with following code
 python -m venv export_landmarks_env
 ```
 
-Activate the virtual environmnet
+Activate the virtual environmnet on linux
 
 ```
 ./export_landmarks_env/bin/activate
+```
+
+or on windows
+
+```
+.\export_landmarks_env\Scripts\activate
 ```
 
 Download necessary libraries using following command
