@@ -35,8 +35,8 @@ with open(csv_file, mode='w', newline='') as file:
 frame_count = 0
 with mp_holistic.Holistic(
     static_image_mode=False, 
-    min_detection_confidence=0.5, 
-    min_tracking_confidence=0.5,
+    min_detection_confidence=0.8,
+    min_tracking_confidence=0.8,
     model_complexity=1,
     ) as holistic:
 

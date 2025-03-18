@@ -5,11 +5,15 @@ import cv2
 df = pd.read_csv("landmarks_output.csv")
 
 POSE_CONNECTIONS = [
-    (0, 1), (1, 2), (2, 3), (3, 7),  # Right arm
-    (0, 4), (4, 5), (5, 6), (6, 8),  # Left arm
-    (9, 10), (11, 12),              # Shoulders
-    (11, 13), (13, 15), (15, 17), (15, 19), (15, 21),  # Left leg
-    (12, 14), (14, 16), (16, 18), (16, 20), (16, 22)   # Right leg
+    # Arms
+    (11, 13), (13, 15),  # Left arm
+    (12, 14), (14, 16),  # Right arm
+    # Shoulders and hips
+    (11, 12), (23, 24), (11, 23), (12, 24),
+    # Left leg
+    (23, 25), (25, 27), (27, 31), (31, 29),
+    # Right leg
+    (24, 26), (26, 28), (28, 32), (32, 30)
 ]
 
 HAND_CONNECTIONS = [
@@ -27,23 +31,40 @@ def extract_landmarks(row, prefix, num_landmarks):
         y = row.get(f"{prefix}_{i}_y", np.nan)
         z = row.get(f"{prefix}_{i}_z", np.nan)
         landmarks.append([x, y, z])
-    return np.array(landmarks)
+    arr = np.array(landmarks)
+    if prefix == "right_hand":
+        print(f"Right Hand Landmarks (First 3): {arr[:3]}")  # Debug
+    return arr
+
 
 def scale_all_landmarks(pose, left_hand, right_hand, face, width=1280, height=720):
-    all_points = []
-    valid_arrays = []
-    for arr in [pose, left_hand, right_hand, face]:
+    # Define the strict processing order
+    processing_order = ['pose', 'left_hand', 'right_hand', 'face']
+    parts = {
+        'pose': pose,
+        'left_hand': left_hand,
+        'right_hand': right_hand,
+        'face': face
+    }
+
+    # Collect valid parts in the defined order
+    valid = []
+    counts = []
+    for key in processing_order:
+        arr = parts[key]
         if arr is not None and arr.size > 0:
-            all_points.append(arr)
-            valid_arrays.append(arr.shape[0])
-    if not all_points:
+            valid.append(key)
+            counts.append(arr.shape[0])
+
+    if not valid:
         return pose, left_hand, right_hand, face
 
-    combined = np.concatenate(all_points, axis=0)
-
+    # Combine and scale landmarks (same as before)
+    combined = np.concatenate([
+        pose, left_hand, right_hand, face
+    ], axis=0) if any([pose.size, left_hand.size, right_hand.size, face.size]) else np.array([])
     min_x, max_x = np.nanmin(combined[:, 0]), np.nanmax(combined[:, 0])
     min_y, max_y = np.nanmin(combined[:, 1]), np.nanmax(combined[:, 1])
-
     x_range = max(max_x - min_x, 0.001)
     y_range = max(max_y - min_y, 0.001)
 
@@ -54,28 +75,24 @@ def scale_all_landmarks(pose, left_hand, right_hand, face, width=1280, height=72
             screen_y = ((y - min_y) / y_range) * height * 0.9 + height * 0.05
             combined[i] = [screen_x, screen_y, 0]
 
+    # Split and assign back in strict order
     split_arrays = []
     idx = 0
-    for count in valid_arrays:
-        slice_arr = combined[idx: idx + count]
+    for count in counts:
+        split_arrays.append(combined[idx:idx + count])
         idx += count
-        split_arrays.append(slice_arr)
 
-    new_pose, new_left, new_right, new_face = None, None, None, None
-    arr_idx = 0
-    if pose is not None and pose.size > 0:
-        new_pose = split_arrays[arr_idx]
-        arr_idx += 1
-    if left_hand is not None and left_hand.size > 0:
-        new_left = split_arrays[arr_idx]
-        arr_idx += 1
-    if right_hand is not None and right_hand.size > 0:
-        new_right = split_arrays[arr_idx]
-        arr_idx += 1
-    if face is not None and face.size > 0:
-        new_face = split_arrays[arr_idx]
+    # Reassign using the original processing order
+    new_parts = {'pose': None, 'left_hand': None, 'right_hand': None, 'face': None}
+    for key, arr in zip(valid, split_arrays):
+        new_parts[key] = arr
 
-    return new_pose, new_left, new_right, new_face
+    return (
+        new_parts['pose'],
+        new_parts['left_hand'],
+        new_parts['right_hand'],
+        new_parts['face']
+    )
 
 def draw_landmarks(img, landmarks, color):
     if landmarks is None or landmarks.size == 0:
@@ -103,7 +120,14 @@ def draw_skeleton(img, landmarks, connections, color):
 def interpolate_landmarks(prev, new, alpha):
     if prev is None or prev.size == 0 or prev.shape != new.shape:
         return new
-    return prev * (1 - alpha) + new * alpha
+    # If new data is all-NaN, retain previous data
+    if np.isnan(new).all():
+        return prev
+    # Blend only valid points
+    mask = ~np.isnan(new)
+    interpolated = prev.copy()
+    interpolated[mask] = prev[mask] * (1 - alpha) + new[mask] * alpha
+    return interpolated
 
 image_size = (720, 1280, 3)
 prev_frame = None
@@ -115,6 +139,8 @@ for i in range(len(df)):
     pose_landmarks = extract_landmarks(row, "pose", 33)
     left_hand_landmarks = extract_landmarks(row, "left_hand", 21)
     right_hand_landmarks = extract_landmarks(row, "right_hand", 21)
+    if i == 0 and np.isnan(right_hand_landmarks).all():
+        right_hand_landmarks = np.zeros((21, 3))
     face_landmarks = extract_landmarks(row, "face", 468)
 
     # Scale all parts using a unified bounding box
