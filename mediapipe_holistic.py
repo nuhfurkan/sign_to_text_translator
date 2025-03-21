@@ -9,13 +9,13 @@ mp_holistic = mp.solutions.holistic
 
 
 # Open video file
-video_path = "mathew1.1.mp4"  # Change to your video file path
+video_path = "test_video_1.mp4"  # Change to your video file path
 cap = cv2.VideoCapture(video_path)
 
 date = time.strftime("%Y-%m-%d_%H-%M-%S")
 
 # Output CSV file
-csv_file = "landmarks_output_" + date + ".csv"
+csv_file = "landmarks_output" + ".csv"
 
 # Landmark names for CSV headers
 pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z', 'visibility']]
@@ -24,9 +24,7 @@ right_hand_landmarks = [f'right_hand_{i}_{coord}' for i in range(21) for coord i
 face_landmarks = [f'face_{i}_{coord}' for i in range(468) for coord in ['x', 'y', 'z']]
 
 # Column headers
-columns = ["frame"] + pose_landmarks + left_hand_landmarks + right_hand_landmarks # + face_landmarks
-
-start_time = time.time()
+columns = ["frame"] + pose_landmarks + left_hand_landmarks + right_hand_landmarks + face_landmarks
 
 # Create a CSV file and write the header
 with open(csv_file, mode='w', newline='') as file:
@@ -37,12 +35,13 @@ with open(csv_file, mode='w', newline='') as file:
 frame_count = 0
 with mp_holistic.Holistic(
     static_image_mode=False, 
-    min_detection_confidence=0.5, 
-    min_tracking_confidence=0.5,
-    model_complexity=0,
+    min_detection_confidence=0.8,
+    min_tracking_confidence=0.8,
+    model_complexity=1,
     ) as holistic:
 
     print("Processing video...")
+    start_time = time.time()
     while cap.isOpened():
         (f"Processing frame {frame_count}")
         ret, frame = cap.read()
