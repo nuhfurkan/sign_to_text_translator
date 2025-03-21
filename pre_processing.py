@@ -14,7 +14,7 @@ def normalize(data):
 
 # Rotate
 def rotate(data):
-
+    
     pass
 
 # Scale
