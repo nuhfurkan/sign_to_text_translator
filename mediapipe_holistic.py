@@ -9,7 +9,7 @@ mp_holistic = mp.solutions.holistic
 
 
 # Open video file
-video_path = "test_video_1.mp4"  # Change to your video file path
+video_path = "test.mp4"  # Change to your video file path
 cap = cv2.VideoCapture(video_path)
 
 date = time.strftime("%Y-%m-%d_%H-%M-%S")
@@ -21,10 +21,10 @@ csv_file = "landmarks_output" + ".csv"
 pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z', 'visibility']]
 left_hand_landmarks = [f'left_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
 right_hand_landmarks = [f'right_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
-face_landmarks = [f'face_{i}_{coord}' for i in range(468) for coord in ['x', 'y', 'z']]
+# face_landmarks = [f'face_{i}_{coord}' for i in range(468) for coord in ['x', 'y', 'z']]
 
 # Column headers
-columns = ["frame"] + pose_landmarks + left_hand_landmarks + right_hand_landmarks + face_landmarks
+columns = ["frame"] + pose_landmarks + left_hand_landmarks + right_hand_landmarks  # + face_landmarks
 
 # Create a CSV file and write the header
 with open(csv_file, mode='w', newline='') as file:
@@ -77,10 +77,10 @@ with mp_holistic.Holistic(
             frame_landmarks += [None] * len(right_hand_landmarks)
 
         # Face landmarks
-        if results.face_landmarks:
-            frame_landmarks += [val for lm in results.face_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
-        else:
-            frame_landmarks += [None] * len(face_landmarks)
+        # if results.face_landmarks:
+        #     frame_landmarks += [val for lm in results.face_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
+        # else:
+        #     frame_landmarks += [None] * len(face_landmarks)
 
         # print(frame_landmarks)
 
