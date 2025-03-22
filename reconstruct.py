@@ -151,8 +151,8 @@ for i in range(len(df)):
     # Smooth movement if previous frame data exists
     if prev_frame:
         pose_landmarks = interpolate_landmarks(prev_frame["pose"], pose_landmarks, 0.4)
-        left_hand_landmarks = interpolate_landmarks(prev_frame["left_hand"], left_hand_landmarks, 0.8)
-        right_hand_landmarks = interpolate_landmarks(prev_frame["right_hand"], right_hand_landmarks, 0.8)
+        left_hand_landmarks = interpolate_landmarks(prev_frame["left_hand"], left_hand_landmarks, 0.4)
+        right_hand_landmarks = interpolate_landmarks(prev_frame["right_hand"], right_hand_landmarks, 0.4)
         face_landmarks = interpolate_landmarks(prev_frame["face"], face_landmarks, 0.4)
 
     draw_skeleton(img, pose_landmarks, POSE_CONNECTIONS, (0, 255, 0))
