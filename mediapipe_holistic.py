@@ -18,7 +18,7 @@ date = time.strftime("%Y-%m-%d_%H-%M-%S")
 csv_file = "landmarks_output" + ".csv"
 
 # Landmark names for CSV headers
-pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z', 'visibility']]
+pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z']]
 left_hand_landmarks = [f'left_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
 right_hand_landmarks = [f'right_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
 # face_landmarks = [f'face_{i}_{coord}' for i in range(468) for coord in ['x', 'y', 'z']]
@@ -60,7 +60,7 @@ with mp_holistic.Holistic(
 
         # Pose landmarks
         if results.pose_landmarks:
-            frame_landmarks += [val for lm in results.pose_landmarks.landmark for val in [lm.x, lm.y, lm.z, lm.visibility]]
+            frame_landmarks += [val for lm in results.pose_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
         else:
             frame_landmarks += [None] * len(pose_landmarks)
 

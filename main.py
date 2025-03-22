@@ -4,7 +4,7 @@ file = "landmarks_output.csv"
 
 df = pandas.read_csv(file)
 
-print(df.shape)
+print(df.head())
 # Check columns for the first frame's right-hand data
 print("Right Hand Columns:", [col for col in df.columns if "right_hand" in col])
 
