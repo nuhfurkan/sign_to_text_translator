@@ -7,6 +7,7 @@ from sklearn.impute import KNNImputer
 
 path = "./landmarks_output.csv"
 
+
 # Read data
 def read_data(path):
     data = pd.read_csv(path)
@@ -76,7 +77,6 @@ def rotate(landmarks):
 
     return np.array(rotated_landmarks)
 
-
 # Rotate
 def rotate(data, frame_idx=None):
     """
@@ -125,6 +125,7 @@ def _rotate_single_frame(frame):
     # Ensure orthogonality
     y_axis = np.cross(z_axis, x_axis)
     y_axis /= np.linalg.norm(y_axis)
+
     # Rotation matrix
     R = np.vstack([x_axis, y_axis, z_axis]).T
 
@@ -200,8 +201,8 @@ def impute_missing_entries(df, k_neighbors=3, save=False, name="./data/completed
     return df
 
 
-# Smooth data
-def smooth_data(data: pd.DataFrame, alpha=0.4, columns=None) -> pd.DataFrame:
+# Smooth
+def smooth(data: pd.DataFrame, alpha=0.4, columns=None) -> pd.DataFrame:
     """
     Apply exponential moving average smoothing to a DataFrame of landmark data.
 
@@ -232,7 +233,6 @@ def smooth_data(data: pd.DataFrame, alpha=0.4, columns=None) -> pd.DataFrame:
 
     return smoothed_data
 
-
 # PCA
 def pca(data, n_components=0.95, save=False, name="./data/landmarks_output_pca.csv") -> Optional[pd.DataFrame]:
     pca = PCA(n_components=n_components)
@@ -247,20 +247,21 @@ def pca(data, n_components=0.95, save=False, name="./data/landmarks_output_pca.c
     else:
         column_names = original_columns + [f'PC{i + 1}' for i in range(len(original_columns), num_components)]
 
-        # Create DataFrame with original index
-        pca_df = pd.DataFrame(data_pca, columns=column_names, index=data.index)
+    # Create DataFrame with original index
+    pca_df = pd.DataFrame(data_pca, columns=column_names, index=data.index)
 
-        # Save transformed data if requested
-        if save:
-            pca_df.to_csv(name, index=False)
+    # Save transformed data if requested
+    if save:
+        pca_df.to_csv(name, index=False)
 
-        return pca_df
+    return pca_df
 
-    data = read_data("completed_data.csv")
-    data = impute_missing_entries(data, save=True, name="completed_data.csv")
 
-    print(data.head())
+data = read_data("completed_data.csv")
+# data = impute_missing_entries(data, save=True, name="completed_data.csv")
 
-    pca_data = pca(data, save=True)
-    print(pca_data.head())
-    print(normalize(read_data(path)))
+print(data.head())
+
+pca_data = pca(data, save=True)
+print(pca_data.head())
+# print(normalize(read_data(path)))
