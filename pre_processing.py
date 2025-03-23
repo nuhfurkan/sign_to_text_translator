@@ -39,11 +39,6 @@ def rotate(data):
     
     pass
 
-# Scale
-def scale(data):
-
-    pass
-
 # Impute the NaN values / empty data
 def impute_missing_entries(df, k_neighbors=3, save=False, name="./data/completed_data.csv") -> Optional[pd.DataFrame]:
     """
