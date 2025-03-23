@@ -46,63 +46,28 @@ def normalize(data):
 
     return data
 
-# Rotate (Do we need to take all the data at one time or normalize just for one frame? The better one is below.)
-def rotate(landmarks):
-    p11 = np.array((data['pose_11_x'], data['pose_11_y']), (data['pose_11_z']))
-    p12 = np.array((data['pose_12_x'], data['pose_12_y']), (data['pose_12_z']))
-    p23 = np.array((data['pose_23_x'], data['pose_23_y']), (data['pose_23_z']))
-    p24 = np.array((data['pose_24_x'], data['pose_24_y']), (data['pose_24_z']))
-
-    C = (p11 + p12 + p23 + p24) / 4
-    x_axis = p12 - p11
-    x_axis /= np.linalg.norm(x_axis)
-
-    mid_shoulder = (p11 + p12) / 2
-    y_axis = mid_shoulder - C
-    y_axis /= np.linalg.norm(y_axis)
-
-    z_axis = np.cross(x_axis, y_axis)
-    z_axis /= np.linalg.norm(z_axis)
-
-    y_axis = np.cross(z_axis, x_axis)
-    y_axis /= np.linalg.norm(y_axis)
-
-    R = np.vstack([x_axis, y_axis, z_axis]).T
-
-    rotated_landmarks = []
-    for point in landmarks:
-        p = np.array(point) - C  # Translate to torso center
-        p_rotated = np.dot(R.T, p)  # Rotate
-        rotated_landmarks.append(p_rotated)
-
-    return np.array(rotated_landmarks)
-
 # Rotate
 def rotate(data, frame_idx=None):
     """
-    Rotates landmarks to align with a canonical coordinate system based on body pose.
+    Rotates pose and hand landmarks to align with a canonical coordinate system based on body pose.
 
     Parameters:
-    data: DataFrame containing landmark data
-    frame_idx: If provided, process only this frame; otherwise process all frames
+    data: DataFrame containing landmark data (pose + hands)
+    frame_idx: If provided, process only this frame; otherwise, process all frames
 
     Returns:
-    DataFrame or np.array of rotated landmarks
+    DataFrame with rotated landmarks, keeping the original column names.
     """
     if frame_idx is not None:
-        # Process a single frame
-        frame = data.iloc[frame_idx]
-        return _rotate_single_frame(frame)
+        rotated_landmarks = _rotate_single_frame(data.iloc[frame_idx])
+        return pd.DataFrame([rotated_landmarks], columns=data.columns, index=[frame_idx])
     else:
-        # Process all frames sequentially
-        rotated_data = []
-        for i in range(len(data)):
-            rotated_data.append(_rotate_single_frame(data.iloc[i]))
-        return np.array(rotated_data)
+        rotated_data = [_rotate_single_frame(data.iloc[i]) for i in range(len(data))]
+        return pd.DataFrame(rotated_data, columns=data.columns, index=data.index)
 
 
 def _rotate_single_frame(frame):
-    # Extract key points (shoulder and hip landmarks)
+    # Extract key points (shoulder and hip landmarks) for body orientation
     p11 = np.array([frame['pose_11_x'], frame['pose_11_y'], frame['pose_11_z']])  # Left shoulder
     p12 = np.array([frame['pose_12_x'], frame['pose_12_y'], frame['pose_12_z']])  # Right shoulder
     p23 = np.array([frame['pose_23_x'], frame['pose_23_y'], frame['pose_23_z']])  # Left hip
@@ -129,26 +94,26 @@ def _rotate_single_frame(frame):
     # Rotation matrix
     R = np.vstack([x_axis, y_axis, z_axis]).T
 
-    # Extract all landmarks from the frame
-    landmarks = []
+    # Extract all landmarks (pose + hands)
+    rotated_frame = frame.copy()
+
     for col in frame.index:
         if col.endswith('_x'):
-            base = col[:-2]
+            base = col[:-2]  # Get landmark name without '_x'
             point = np.array([
                 frame[f"{base}_x"],
                 frame[f"{base}_y"],
                 frame[f"{base}_z"]
             ])
-            landmarks.append(point)
 
-    # Rotate landmarks
-    rotated_landmarks = []
-    for point in landmarks:
-        p = point - C  # Translate to torso center
-        p_rotated = np.dot(R.T, p)  # Rotate
-        rotated_landmarks.append(p_rotated)
+            # Rotate landmark
+            p = point - C  # Translate to torso center
+            p_rotated = np.dot(R.T, p)  # Rotate
 
-    return np.array(rotated_landmarks)
+            # Store back in the original DataFrame structure
+            rotated_frame[f"{base}_x"], rotated_frame[f"{base}_y"], rotated_frame[f"{base}_z"] = p_rotated
+
+    return rotated_frame.values
 
 
 # Impute the NaN values / empty data
