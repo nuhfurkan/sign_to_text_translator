@@ -46,40 +46,6 @@ def normalize(data):
 
     return data
 
-# Rotate (Do we need to take all the data at one time or normalize just for one frame? The better one is below.)
-def rotate(landmarks: pd.DataFrame, save=False, name="./data/rotated_landmarks.csv") -> Optional[pd.DataFrame]:
-    p11 = np.array((data['pose_11_x'], data['pose_11_y']), (data['pose_11_z']))
-    p12 = np.array((data['pose_12_x'], data['pose_12_y']), (data['pose_12_z']))
-    p23 = np.array((data['pose_23_x'], data['pose_23_y']), (data['pose_23_z']))
-    p24 = np.array((data['pose_24_x'], data['pose_24_y']), (data['pose_24_z']))
-
-    C = (p11 + p12 + p23 + p24) / 4
-    x_axis = p12 - p11
-    x_axis /= np.linalg.norm(x_axis)
-
-    mid_shoulder = (p11 + p12) / 2
-    y_axis = mid_shoulder - C
-    y_axis /= np.linalg.norm(y_axis)
-
-    z_axis = np.cross(x_axis, y_axis)
-    z_axis /= np.linalg.norm(z_axis)
-
-    y_axis = np.cross(z_axis, x_axis)
-    y_axis /= np.linalg.norm(y_axis)
-
-    R = np.vstack([x_axis, y_axis, z_axis]).T
-
-    rotated_landmarks = []
-    for point in landmarks:
-        p = np.array(point) - C  # Translate to torso center
-        p_rotated = np.dot(R.T, p)  # Rotate
-        rotated_landmarks.append(p_rotated)
-    
-    if save:
-        pd.DataFrame(rotated_landmarks).to_csv(name, index=False)
-
-    return pd.DataFrame(rotated_landmarks)
-
 # Rotate
 def rotate(data, frame_idx=None, save=False, name="./data/rotated_landmarks.csv") -> Optional[pd.DataFrame]:
     """
@@ -101,6 +67,9 @@ def rotate(data, frame_idx=None, save=False, name="./data/rotated_landmarks.csv"
         rotated_data = []
         for i in range(len(data)):
             rotated_data.append(_rotate_single_frame(data.iloc[i]).values.flatten().T)
+
+        if save:
+            pd.DataFrame(rotated_data).to_csv(name)
                        
         return pd.DataFrame(rotated_data, columns=data.columns)
 
@@ -151,8 +120,6 @@ def _rotate_single_frame(frame: pd.DataFrame) -> pd.DataFrame:
         p = point - C  # Translate to torso center
         p_rotated = np.dot(R.T, p)  # Rotate
         rotated_landmarks.append(p_rotated)
-
-    # TODO: Return as with the original format DataFrame
 
     return pd.DataFrame(rotated_landmarks)
 
@@ -265,10 +232,9 @@ def pca(data, n_components=0.95, save=False, name="./data/landmarks_output_pca.c
 
 data = read_data("landmarks_output.csv")
 data = impute_missing_entries(data)
-print(data.head())
 data = rotate(data, save=True)
+data = normalize(data)
 print(data.head())
-
 
 
 # print(data.head())
