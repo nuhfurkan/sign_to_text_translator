@@ -69,7 +69,7 @@ def rotate(data, frame_idx=None, save=False, name="./data/rotated_landmarks.csv"
             rotated_data.append(_rotate_single_frame(data.iloc[i]).values.flatten().T)
 
         if save:
-            pd.DataFrame(rotated_data).to_csv(name)
+            pd.DataFrame(rotated_data, columns=data.columns).to_csv(name)
                        
         return pd.DataFrame(rotated_data, columns=data.columns)
 
@@ -232,9 +232,10 @@ def pca(data, n_components=0.95, save=False, name="./data/landmarks_output_pca.c
 
 data = read_data("landmarks_output.csv")
 data = impute_missing_entries(data)
-data = rotate(data, save=True)
+data = smooth(data)
+data = rotate(data)
 data = normalize(data)
-print(data.head())
+print(data.columns)
 
 
 # print(data.head())
