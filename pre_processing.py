@@ -177,6 +177,7 @@ def impute_missing_entries(df: pd.DataFrame, k_neighbors=3, save=False, name="./
 
 
 # Smooth
+# TODO: Imrove the smoothing function performance-wise
 def smooth(data: pd.DataFrame, alpha=0.4, columns=None) -> pd.DataFrame:
     """
     Apply exponential moving average smoothing to a DataFrame of landmark data.
@@ -208,28 +209,25 @@ def smooth(data: pd.DataFrame, alpha=0.4, columns=None) -> pd.DataFrame:
 
     return smoothed_data
 
-# PCA
-def pca(data: pd.DataFrame, n_components=0.95, save=False, name="./data/landmarks_output_pca.csv") -> Optional[pd.DataFrame]:
-    pca = PCA(n_components=n_components)
-    data_pca = pca.fit_transform(data)
+# Find outlier detection method
+def detect_outliers(data: pd.DataFrame, threshold=3) -> pd.DataFrame:
+    """
+    Detect outliers in a DataFrame of landmark data.
 
-    # Retain as many original column names as possible
-    original_columns = list(data.columns)
-    num_components = data_pca.shape[1]
+    Parameters:
+    data: DataFrame containing landmark data
+    threshold: Z-score threshold for outlier detection
 
-    if num_components <= len(original_columns):
-        column_names = original_columns[:num_components]  # Keep original names
-    else:
-        column_names = original_columns + [f'PC{i + 1}' for i in range(len(original_columns), num_components)]
+    Returns:
+    DataFrame with outliers replaced by NaN
+    """
+    # Calculate Z-scores
+    z_scores = np.abs((data - data.mean()) / data.std())
 
-    # Create DataFrame with original index
-    pca_df = pd.DataFrame(data_pca, columns=column_names, index=data.index)
+    # Replace outliers with NaN
+    data[z_scores > threshold] = np.nan
 
-    # Save transformed data if requested
-    if save:
-        pca_df.to_csv(name, index=False)
-
-    return pca_df
+    return data
 
 def translate_hands(data: pd.DataFrame, save=False, name="./data/hands_translated.csv") -> Optional[pd.DataFrame]:
     # Calculate distance between right_hand_0 and pose_16
@@ -259,15 +257,39 @@ def translate_hands(data: pd.DataFrame, save=False, name="./data/hands_translate
 
     return data
 
-data = read_data("landmarks_output.csv")
+# PCA
+def pca(data: pd.DataFrame, n_components=0.9999, save=False, name="./data/landmarks_output_pca.csv") -> Optional[pd.DataFrame]:
+    pca = PCA(n_components=n_components)
+    data_pca = pca.fit_transform(data)
+
+    # Retain as many original column names as possible
+    original_columns = list(data.columns)
+    num_components = data_pca.shape[1]
+
+    if num_components <= len(original_columns):
+        column_names = original_columns[:num_components]  # Keep original names
+    else:
+        column_names = original_columns + [f'PC{i + 1}' for i in range(len(original_columns), num_components)]
+
+    # Create DataFrame with original index
+    pca_df = pd.DataFrame(data_pca, columns=column_names, index=data.index)
+
+    # Save transformed data if requested
+    if save:
+        pca_df.to_csv(name, index=False)
+
+    return pca_df
+
+data = read_data("./landmarks_output.csv")
+data = impute_missing_entries(data)
+data = detect_outliers(data)
 data = impute_missing_entries(data)
 data = translate_hands(data)
 data = smooth(data)
-data = rotate(data)
-data = normalize(data, save=True)
+data = rotate(data, save=True)
+
+# data = normalize(data, save=True)
 
 # print(data.head())
 
-# pca_data = pca(data, save=True)
-# print(pca_data.head())
 # print(normalize(read_data(path)))

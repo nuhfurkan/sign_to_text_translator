@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import cv2
 
-df = pd.read_csv("./data/normalized_landmarks.csv")
+df = pd.read_csv("./data/rotated_landmarks.csv")
 
 POSE_CONNECTIONS = [
     # Arms

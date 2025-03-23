@@ -7,7 +7,7 @@ from typing import Optional
 # Reads data and groups the x,y,z coordinates of each landmark together
 def read_group_data(path) -> pd.DataFrame:
     pure_data = pd.read_csv(path)
-    pure_data = pure_data.drop(pure_data.columns[0], axis=1)  # remove the first column - frame
+    # pure_data = pure_data.drop(pure_data.columns[0], axis=1)  # remove the first column - frame
 
     landmarks = sorted(set(col.rsplit('_', 1)[0] for col in pure_data.columns))
 
@@ -58,7 +58,9 @@ def pca_importance_scores(data: pd.DataFrame, n_components: Optional[int] = None
 
 # Example Usage
 
-data = read_group_data("./landmarks_output.csv")
+data = read_group_data("./data/normalized_landmarks.csv")
 
-importance_df = pca_importance_scores(data=data, n_components=0.95)
-print(importance_df)
+# importance_df = pca_importance_scores(data=data, n_components=0.95)
+# print(importance_df)
+
+data.to_csv("./data/landmarks_grouped.csv", index=False)
