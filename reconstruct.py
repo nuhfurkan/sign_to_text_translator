@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import cv2
 
-df = pd.read_csv("landmarks_output.csv")
+df = pd.read_csv("./data/normalized_landmarks.csv")
 
 POSE_CONNECTIONS = [
     # Arms
@@ -151,17 +151,17 @@ for i in range(len(df)):
     # Smooth movement if previous frame data exists
     if prev_frame:
         pose_landmarks = interpolate_landmarks(prev_frame["pose"], pose_landmarks, 0.4)
-        left_hand_landmarks = interpolate_landmarks(prev_frame["left_hand"], left_hand_landmarks, 0.8)
-        right_hand_landmarks = interpolate_landmarks(prev_frame["right_hand"], right_hand_landmarks, 0.8)
+        left_hand_landmarks = interpolate_landmarks(prev_frame["left_hand"], left_hand_landmarks, 0.4)
+        right_hand_landmarks = interpolate_landmarks(prev_frame["right_hand"], right_hand_landmarks, 0.4)
         face_landmarks = interpolate_landmarks(prev_frame["face"], face_landmarks, 0.4)
 
     draw_skeleton(img, pose_landmarks, POSE_CONNECTIONS, (0, 255, 0))
     draw_skeleton(img, left_hand_landmarks, HAND_CONNECTIONS, (255, 0, 0))
     draw_skeleton(img, right_hand_landmarks, HAND_CONNECTIONS, (0, 0, 255))
     draw_landmarks(img, pose_landmarks, (0, 255, 0))
-    draw_landmarks(img, left_hand_landmarks, (255, 0, 0))
-    draw_landmarks(img, right_hand_landmarks, (0, 0, 255))
-    draw_landmarks(img, face_landmarks, (0, 165, 255))
+    # draw_landmarks(img, left_hand_landmarks, (255, 0, 0))
+    # draw_landmarks(img, right_hand_landmarks, (0, 0, 255))
+    # draw_landmarks(img, face_landmarks, (0, 165, 255))
 
     if prev_frame:
         # Optional cross-fade effect

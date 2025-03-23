@@ -7,7 +7,6 @@ from sklearn.impute import KNNImputer
 
 path = "./completed_data.csv"
 
-
 # Read data
 def read_data(path):
     data = pd.read_csv(path)
@@ -29,7 +28,7 @@ def read_landmarks(data) -> pd.DataFrame:
     return df_tuples
 
 # Normalize
-def normalize(data):
+def normalize(data: pd.DataFrame, save=False, name="./data/normalized_landmarks.csv") -> Optional[pd.DataFrame]:
     # Identify unique coordinate types (x, y, z)
     coordinate_types = ['x', 'y', 'z']
 
@@ -44,10 +43,13 @@ def normalize(data):
             preprocessing.MinMaxScaler().fit_transform(data[cols]),
         )
 
+    if save:
+        data.to_csv(name, index=False)
+
     return data
 
 # Rotate
-def rotate(data, frame_idx=None, save=False, name="./data/rotated_landmarks.csv") -> Optional[pd.DataFrame]:
+def rotate(data: pd.DataFrame, frame_idx=None, save=False, name="./data/rotated_landmarks.csv") -> Optional[pd.DataFrame]:
     """
     Rotates landmarks to align with a canonical coordinate system based on body pose.
 
@@ -125,7 +127,7 @@ def _rotate_single_frame(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 # Impute the NaN values / empty data
-def impute_missing_entries(df, k_neighbors=3, save=False, name="./data/completed_data.csv") -> Optional[pd.DataFrame]:
+def impute_missing_entries(df: pd.DataFrame, k_neighbors=3, save=False, name="./data/completed_data.csv") -> Optional[pd.DataFrame]:
     """
     Automatically detects and imputes missing values in all columns based on gap length.
 
@@ -207,7 +209,7 @@ def smooth(data: pd.DataFrame, alpha=0.4, columns=None) -> pd.DataFrame:
     return smoothed_data
 
 # PCA
-def pca(data, n_components=0.95, save=False, name="./data/landmarks_output_pca.csv") -> Optional[pd.DataFrame]:
+def pca(data: pd.DataFrame, n_components=0.95, save=False, name="./data/landmarks_output_pca.csv") -> Optional[pd.DataFrame]:
     pca = PCA(n_components=n_components)
     data_pca = pca.fit_transform(data)
 
@@ -229,14 +231,40 @@ def pca(data, n_components=0.95, save=False, name="./data/landmarks_output_pca.c
 
     return pca_df
 
+def translate_hands(data: pd.DataFrame, save=False, name="./data/hands_translated.csv") -> Optional[pd.DataFrame]:
+    # Calculate distance between right_hand_0 and pose_16
+    x_distance = data['right_hand_0_x'] - data['pose_16_x']
+    y_distance = data['right_hand_0_y'] - data['pose_16_y']
+    z_distance = data['right_hand_0_z'] - data['pose_16_z']
+
+    # Translate right hand to pose_16
+    for i in range(21):
+        data[f'right_hand_{i}_x'] -= x_distance
+        data[f'right_hand_{i}_y'] -= y_distance
+        data[f'right_hand_{i}_z'] -= z_distance
+
+    # Calculate distance between left_hand_0 and pose_15
+    x_distance = data['left_hand_0_x'] - data['pose_15_x']
+    y_distance = data['left_hand_0_y'] - data['pose_15_y']
+    z_distance = data['left_hand_0_z'] - data['pose_15_z']
+
+    # Translate left hand to pose_15
+    for i in range(21):
+        data[f'left_hand_{i}_x'] -= x_distance
+        data[f'left_hand_{i}_y'] -= y_distance
+        data[f'left_hand_{i}_z'] -= z_distance
+
+    if save:
+        data.to_csv(name, index=False)
+
+    return data
 
 data = read_data("landmarks_output.csv")
 data = impute_missing_entries(data)
+data = translate_hands(data)
 data = smooth(data)
 data = rotate(data)
-data = normalize(data)
-print(data.columns)
-
+data = normalize(data, save=True)
 
 # print(data.head())
 
