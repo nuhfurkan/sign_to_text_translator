@@ -5,7 +5,7 @@ from sklearn.decomposition import PCA
 from typing import Optional
 from sklearn.impute import KNNImputer
 
-path = "./landmarks_output.csv"
+path = "./completed_data.csv"
 
 
 # Read data
@@ -47,7 +47,7 @@ def normalize(data):
     return data
 
 # Rotate (Do we need to take all the data at one time or normalize just for one frame? The better one is below.)
-def rotate(landmarks):
+def rotate(landmarks: pd.DataFrame, save=False, name="./data/rotated_landmarks.csv") -> Optional[pd.DataFrame]:
     p11 = np.array((data['pose_11_x'], data['pose_11_y']), (data['pose_11_z']))
     p12 = np.array((data['pose_12_x'], data['pose_12_y']), (data['pose_12_z']))
     p23 = np.array((data['pose_23_x'], data['pose_23_y']), (data['pose_23_z']))
@@ -74,11 +74,14 @@ def rotate(landmarks):
         p = np.array(point) - C  # Translate to torso center
         p_rotated = np.dot(R.T, p)  # Rotate
         rotated_landmarks.append(p_rotated)
+    
+    if save:
+        pd.DataFrame(rotated_landmarks).to_csv(name, index=False)
 
-    return np.array(rotated_landmarks)
+    return pd.DataFrame(rotated_landmarks)
 
 # Rotate
-def rotate(data, frame_idx=None):
+def rotate(data, frame_idx=None, save=False, name="./data/rotated_landmarks.csv") -> Optional[pd.DataFrame]:
     """
     Rotates landmarks to align with a canonical coordinate system based on body pose.
 
@@ -97,11 +100,12 @@ def rotate(data, frame_idx=None):
         # Process all frames sequentially
         rotated_data = []
         for i in range(len(data)):
-            rotated_data.append(_rotate_single_frame(data.iloc[i]))
-        return np.array(rotated_data)
+            rotated_data.append(_rotate_single_frame(data.iloc[i]).values.flatten().T)
+                       
+        return pd.DataFrame(rotated_data, columns=data.columns)
 
 
-def _rotate_single_frame(frame):
+def _rotate_single_frame(frame: pd.DataFrame) -> pd.DataFrame:
     # Extract key points (shoulder and hip landmarks)
     p11 = np.array([frame['pose_11_x'], frame['pose_11_y'], frame['pose_11_z']])  # Left shoulder
     p12 = np.array([frame['pose_12_x'], frame['pose_12_y'], frame['pose_12_z']])  # Right shoulder
@@ -148,7 +152,9 @@ def _rotate_single_frame(frame):
         p_rotated = np.dot(R.T, p)  # Rotate
         rotated_landmarks.append(p_rotated)
 
-    return np.array(rotated_landmarks)
+    # TODO: Return as with the original format DataFrame
+
+    return pd.DataFrame(rotated_landmarks)
 
 
 # Impute the NaN values / empty data
@@ -257,11 +263,16 @@ def pca(data, n_components=0.95, save=False, name="./data/landmarks_output_pca.c
     return pca_df
 
 
-data = read_data("completed_data.csv")
-# data = impute_missing_entries(data, save=True, name="completed_data.csv")
-
+data = read_data("landmarks_output.csv")
+data = impute_missing_entries(data)
+print(data.head())
+data = rotate(data, save=True)
 print(data.head())
 
-pca_data = pca(data, save=True)
-print(pca_data.head())
+
+
+# print(data.head())
+
+# pca_data = pca(data, save=True)
+# print(pca_data.head())
 # print(normalize(read_data(path)))
