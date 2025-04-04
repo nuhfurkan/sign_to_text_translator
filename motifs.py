@@ -54,3 +54,16 @@ for k, dim_name in enumerate(df.columns):
         axs[k + mps.shape[0]].plot(nn_idx[k], mps[k, nn_idx[k]] + 1, marker="v", markersize=10, color='black')
 
 plt.show()
+
+def save_motifs(mps, motifs_idx, nn_idx) -> pd.DataFrame:
+    """
+    Save the motifs and nearest neighbors in a DataFrame.
+    """
+    motifs = pd.DataFrame(mps)
+    motifs['motifs_idx'] = motifs_idx
+    motifs['nn_idx'] = nn_idx
+    return motifs
+
+data = save_motifs(mps, motifs_idx, nn_idx)
+print(data.head())
+data.to_csv('./data/motifs.csv', index=False)
