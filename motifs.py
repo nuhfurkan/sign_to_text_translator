@@ -3,17 +3,15 @@ import numpy as np
 import stumpy
 import matplotlib.pyplot as plt
 
-df = pd.read_csv('./data/final_data.csv')
+df = pd.read_csv('./data/normalized_landmarks.csv')
 
 # Uncomment to work with only pose_0
-df = df.iloc[:, 1:4]
-
+# df = df.iloc[:, 1:4]
 
 m = 30
 mps = {}
 
 mps, indices = stumpy.mstump(df, m)
-
 
 '''
 Starting with motifs_idx and nn_idx go m steps forward

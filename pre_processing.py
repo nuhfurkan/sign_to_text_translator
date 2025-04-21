@@ -288,17 +288,24 @@ def skip_initial_blank(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-data = read_data("./landmarks_output.csv")
+data = read_data("./data/landmarks_output.csv")
+print("Data was read")
 data = skip_initial_blank(data)
-data = impute_missing_entries(data)
+print("Removed initial blank frames")
+data = impute_missing_entries(data, save=True)
+print("Imputed missing entries")
 data = detect_outliers(data)
-data = impute_missing_entries(data)
-data = translate_hands(data)
+print("Detected outliers")
+data = impute_missing_entries(data, save=True)
+print("Imputed missing entries again")
+data = translate_hands(data, save=True)
+print("Translated hands")
 data = smooth(data)
+print("Smoothing done")
 data = rotate(data, save=True)
-
-# data = normalize(data, save=True)
-
+print("Rotated data")
+data = normalize(data, save=True)
+print("Normalized data")
 # print(data.head())
 
 # print(normalize(read_data(path)))
