@@ -280,7 +280,16 @@ def pca(data: pd.DataFrame, n_components=0.9999, save=False, name="./data/landma
 
     return pca_df
 
+# Skip initial blank rows - Some videos have initial blank frames where no body parts is detected
+def skip_initial_blank(data: pd.DataFrame) -> pd.DataFrame:
+    while data.iloc[0].fillna(0).eq(0).all() == True:
+        data = data.drop(0, axis=0)
+        data = data.reset_index(drop=True)
+
+    return data
+
 data = read_data("./landmarks_output.csv")
+data = skip_initial_blank(data)
 data = impute_missing_entries(data)
 data = detect_outliers(data)
 data = impute_missing_entries(data)
