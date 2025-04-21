@@ -4,6 +4,7 @@ from sklearn import preprocessing
 from sklearn.decomposition import PCA
 from typing import Optional
 from sklearn.impute import KNNImputer
+import argparse
 
 path = "./completed_data.csv"
 
@@ -287,24 +288,34 @@ def skip_initial_blank(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-data = read_data("./data/landmarks_output.csv")
-print("Data was read")
-data = skip_initial_blank(data)
-print("Removed initial blank frames")
-data = impute_missing_entries(data, save=True)
-print("Imputed missing entries")
-data = detect_outliers(data)
-print("Detected outliers")
-data = impute_missing_entries(data, save=True)
-print("Imputed missing entries again")
-data = translate_hands(data, save=True)
-print("Translated hands")
-data = smooth(data)
-print("Smoothing done")
-data = rotate(data, save=True)
-print("Rotated data")
-data = normalize(data, save=True)
-print("Normalized data")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Preprocess landmark data")
+    parser.add_argument("--data", type=str, required=True, help="Path to the data file.")
+    parser.add_argument("--save_imputed", type=str, help="Save imputed data to a file.")
+    parser.add_argument("--save_translated_hands", help="Save translated hands to a file.")
+    parser.add_argument("--save_rotated", help="Save rotated data to a file.")
+    parser.add_argument("--save_normalized", default=True, help="Save normalized data to a file.")
+
+    args = parser.parse_args()
+
+    data = read_data("./data/landmarks_output.csv")
+    print("Data was read")
+    data = skip_initial_blank(data)
+    print("Removed initial blank frames")
+    data = impute_missing_entries(data)
+    print("Imputed missing entries")
+    data = detect_outliers(data)
+    print("Detected outliers")
+    data = impute_missing_entries(data, save=args.save_imputed)
+    print("Imputed missing entries again")
+    data = translate_hands(data, save=args.save_translated_hands)
+    print("Translated hands")
+    data = smooth(data)
+    print("Smoothing done")
+    data = rotate(data, save=args.save_rotated)
+    print("Rotated data")
+    data = normalize(data, save=args.save_normalized)
+    print("Normalized data")
 # print(data.head())
 
 # print(normalize(read_data(path)))

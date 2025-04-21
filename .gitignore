@@ -7,3 +7,4 @@ test.mp4
 landmarks_output.csv
 completed_data.csv
 data/*
+motif_search.py
