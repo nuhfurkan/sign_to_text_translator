@@ -51,19 +51,18 @@ def normalize(data: pd.DataFrame, save=False, name="./data/normalized_landmarks.
 # Rotate
 def rotate(data: pd.DataFrame, frame_idx=None, save=False, name="./data/rotated_landmarks.csv") -> Optional[pd.DataFrame]:
     """
-    Rotates landmarks to align with a canonical coordinate system based on body pose.
+    Rotates pose and hand landmarks to align with a canonical coordinate system based on body pose.
 
     Parameters:
-    data: DataFrame containing landmark data
-    frame_idx: If provided, process only this frame; otherwise process all frames
+    data: DataFrame containing landmark data (pose + hands)
+    frame_idx: If provided, process only this frame; otherwise, process all frames
 
     Returns:
-    DataFrame or np.array of rotated landmarks
+    DataFrame with rotated landmarks, keeping the original column names.
     """
     if frame_idx is not None:
-        # Process a single frame
-        frame = data.iloc[frame_idx]
-        return _rotate_single_frame(frame)
+        rotated_landmarks = _rotate_single_frame(data.iloc[frame_idx])
+        return pd.DataFrame([rotated_landmarks], columns=data.columns, index=[frame_idx])
     else:
         # Process all frames sequentially
         rotated_data = []
@@ -104,24 +103,24 @@ def _rotate_single_frame(frame: pd.DataFrame) -> pd.DataFrame:
     # Rotation matrix
     R = np.vstack([x_axis, y_axis, z_axis]).T
 
-    # Extract all landmarks from the frame
-    landmarks = []
+    # Extract all landmarks (pose + hands)
+    rotated_frame = frame.copy()
+
     for col in frame.index:
         if col.endswith('_x'):
-            base = col[:-2]
+            base = col[:-2]  # Get landmark name without '_x'
             point = np.array([
                 frame[f"{base}_x"],
                 frame[f"{base}_y"],
                 frame[f"{base}_z"]
             ])
-            landmarks.append(point)
 
-    # Rotate landmarks
-    rotated_landmarks = []
-    for point in landmarks:
-        p = point - C  # Translate to torso center
-        p_rotated = np.dot(R.T, p)  # Rotate
-        rotated_landmarks.append(p_rotated)
+            # Rotate landmark
+            p = point - C  # Translate to torso center
+            p_rotated = np.dot(R.T, p)  # Rotate
+
+            # Store back in the original DataFrame structure
+            rotated_frame[f"{base}_x"], rotated_frame[f"{base}_y"], rotated_frame[f"{base}_z"] = p_rotated
 
     return pd.DataFrame(rotated_landmarks)
 
