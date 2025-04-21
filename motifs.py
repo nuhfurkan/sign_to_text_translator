@@ -87,3 +87,5 @@ if __name__ == '__main__':
     print(data.head())
     
     data.to_csv('./data/motifs.csv', index=False)
+
+# TODO: not all motifs are detected

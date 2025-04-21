@@ -300,6 +300,7 @@ if __name__ == "__main__":
 
     data = read_data("./data/landmarks_output.csv")
     print("Data was read")
+    # TODO: implement trimming empty reads at the end and blank frames (which supposed to be blank)
     data = skip_initial_blank(data)
     print("Removed initial blank frames")
     data = impute_missing_entries(data)
@@ -310,6 +311,7 @@ if __name__ == "__main__":
     print("Imputed missing entries again")
     data = translate_hands(data, save=args.save_translated_hands)
     print("Translated hands")
+    # TODO: data smooting should be imporved
     data = smooth(data)
     print("Smoothing done")
     data = rotate(data, save=args.save_rotated)

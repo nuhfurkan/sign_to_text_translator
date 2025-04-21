@@ -85,3 +85,14 @@ The motif discovery pipeline performs the following:
 
 ```bash
 python find_motifs.py --m 40 --data ./data/normalized_landmarks.csv --plot --save ./output/motifs.csv
+```
+
+## Visualization
+### visualise.py
+Visualise the landmarks on given video input.
+
+### reconstruct.py
+Reconstruct a stickman out of generated landmarks.
+
+### visualise_motifs.py
+Visualise selected columns for processed motifs data.
