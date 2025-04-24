@@ -9,12 +9,16 @@ import argparse
 mp_holistic = mp.solutions.holistic
 
 
-def process_video(video_path :str, csv_file: str):
+def process_video(video_path :str, csv_file: str, only_hands: bool = False):
     # Open video file
     cap = cv2.VideoCapture(video_path)
 
     # Landmark names for CSV headers
-    pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z']]
+    if not only_hands:
+        pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z']]
+    else:
+        pose_landmarks = []
+        
     left_hand_landmarks = [f'left_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
     right_hand_landmarks = [f'right_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
     # face_landmarks = [f'face_{i}_{coord}' for i in range(468) for coord in ['x', 'y', 'z']]
@@ -55,10 +59,11 @@ def process_video(video_path :str, csv_file: str):
             frame_landmarks = [frame_count]
 
             # Pose landmarks
-            if results.pose_landmarks:
-                frame_landmarks += [val for lm in results.pose_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
-            else:
-                frame_landmarks += [None] * len(pose_landmarks)
+            if not only_hands:
+                if results.pose_landmarks:
+                    frame_landmarks += [val for lm in results.pose_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
+                else:
+                    frame_landmarks += [None] * len(pose_landmarks)
 
             # Left hand landmarks
             if results.left_hand_landmarks:
@@ -104,6 +109,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process video and extract landmarks.")
     parser.add_argument("--video", type=str, help="Path to the video file.")
     parser.add_argument("--output", type=str, default=csv_file, help="Path to the output CSV file.")
+    parser.add_argument("--only_hands", default=False, action="store_true", help="Process only hands.")
     args = parser.parse_args()
 
     if args.video:
@@ -111,7 +117,7 @@ if __name__ == "__main__":
         output_path = args.output
         print(f"Processing video: {video_path}")
 
-        process_video(video_path, output_path)
+        process_video(video_path, output_path, only_hands=args.only_hands)
     else:
         print("No video file provided. Using default video.")
 
