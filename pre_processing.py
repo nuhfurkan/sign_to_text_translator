@@ -315,6 +315,8 @@ if __name__ == "__main__":
     parser.add_argument("--save_trimmed", default=True, help="Save trimmed data to a file.")
     parser.add_argument("--out_folder", type=str, default="./data/", help="Output folder for processed data.")
 
+    parser.add_argument("--hands_data", default=False, action="store_true", help="Process only hands data.")
+
     args = parser.parse_args()
 
     if not os.path.exists(args.out_folder):
@@ -322,21 +324,31 @@ if __name__ == "__main__":
 
     data = read_data(args.data)
     print("Data was read")
+    
     data = skip_blank(data, save=args.save_trimmed, name=args.out_folder + "trimmed_data.csv")
     print("Removed blank frames")
+    
     data = impute_missing_entries(data)
     print("Imputed missing entries")
+    
     data = detect_outliers(data)
     print("Detected outliers")
+    
     data = impute_missing_entries(data, save=args.save_imputed, name=args.out_folder + "completed_data.csv")
     print("Imputed missing entries again")
-    data = translate_hands(data, save=args.save_translated_hands, name=args.out_folder + "translated_hands.csv")
-    print("Translated hands")
+    
+    if not args.hands_data:    
+        data = translate_hands(data, save=args.save_translated_hands, name=args.out_folder + "translated_hands.csv")
+        print("Translated hands")
+    
     # TODO: data smooting should be imporved
     data = smooth(data)
     print("Smoothing done")
-    data = rotate(data, save=args.save_rotated, name=args.out_folder + "rotated_landmarks.csv")
-    print("Rotated data")
+    
+    if not args.hands_data:
+        data = rotate(data, save=args.save_rotated, name=args.out_folder + "rotated_landmarks.csv")
+        print("Rotated data")
+    
     data = normalize(data, save=args.save_normalized, name=args.out_folder + "normalized_landmarks.csv")
     print("Normalized data")
 # print(data.head())

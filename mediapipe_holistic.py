@@ -1,3 +1,4 @@
+import os
 import cv2
 import time
 import mediapipe as mp
@@ -8,28 +9,60 @@ import argparse
 # Initialize MediaPipe Holistic
 mp_holistic = mp.solutions.holistic
 
+def get_video_info(video_path: str):
+    """
+    Get video information such as width, height, and FPS.
+    """
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print("Error: Could not open video.")
+        return None
 
-def process_video(video_path :str, csv_file: str, only_hands: bool = False):
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = cap.get(cv2.CAP_PROP_FPS)
+
+    cap.release()
+    return width, height, fps
+
+
+def process_video(video_path :str, csv_file: str, only_hands: bool = False, only_pose: bool = False, save_separate: bool = False):
     # Open video file
     cap = cv2.VideoCapture(video_path)
 
+    if not os.path.exists(csv_file):
+        os.mkdir(csv_file)
+    
     # Landmark names for CSV headers
-    if not only_hands:
-        pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z']]
-    else:
-        pose_landmarks = []
-        
-    left_hand_landmarks = [f'left_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
-    right_hand_landmarks = [f'right_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
+    pose_landmarks = ["frame"] + [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z']]
+    left_hand_landmarks = ["frame"] + [f'left_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
+    right_hand_landmarks = ["frame"] + [f'right_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
     # face_landmarks = [f'face_{i}_{coord}' for i in range(468) for coord in ['x', 'y', 'z']]
 
+    columns = []
     # Column headers
-    columns = ["frame"] + pose_landmarks + left_hand_landmarks + right_hand_landmarks  # + face_landmarks
+    if only_hands:
+        columns = ["frame"] + left_hand_landmarks + right_hand_landmarks
+    elif only_pose:
+        columns = ["frame"] + pose_landmarks
+    else:
+        columns = ["frame"] + pose_landmarks + left_hand_landmarks + right_hand_landmarks  # + face_landmarks
 
     # Create a CSV file and write the header
-    with open(csv_file, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(columns)
+    if save_separate:
+        with open(csv_file + "pose.csv", mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(pose_landmarks)
+        with open(csv_file + "left_hand.csv", mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(left_hand_landmarks)
+        with open(csv_file + "right_hand.csv", mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(right_hand_landmarks)
+    else:
+        with open(csv_file + "landmarks.csv", mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(columns)
 
     # Process video
     frame_count = 0
@@ -56,26 +89,28 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False):
             results = holistic.process(rgb_frame)
 
             # Extract landmarks
-            frame_landmarks = [frame_count]
+            pose_landmarks = [frame_count]
+            right_hand_landmarks = [frame_count]
+            left_hand_landmarks = [frame_count]
 
             # Pose landmarks
             if not only_hands:
                 if results.pose_landmarks:
-                    frame_landmarks += [val for lm in results.pose_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
+                    pose_landmarks += [val for lm in results.pose_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
                 else:
-                    frame_landmarks += [None] * len(pose_landmarks)
+                    pose_landmarks += [None] * (33 * 3)
 
             # Left hand landmarks
             if results.left_hand_landmarks:
-                frame_landmarks += [val for lm in results.left_hand_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
+                left_hand_landmarks += [val for lm in results.left_hand_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
             else:
-                frame_landmarks += [None] * len(left_hand_landmarks)
+                left_hand_landmarks += [None] * (21 * 3)
 
             # Right hand landmarks
             if results.right_hand_landmarks:
-                frame_landmarks += [val for lm in results.right_hand_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
+                right_hand_landmarks += [val for lm in results.right_hand_landmarks.landmark for val in [lm.x, lm.y, lm.z]]
             else:
-                frame_landmarks += [None] * len(right_hand_landmarks)
+                right_hand_landmarks += [None] * (21 * 3)
 
             # Face landmarks
             # if results.face_landmarks:
@@ -86,9 +121,21 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False):
             # print(frame_landmarks)
 
             # Save to CSV
-            with open(csv_file, mode='a', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(frame_landmarks)
+            if save_separate:
+                if not only_hands:
+                    with open(csv_file + "pose.csv", mode='a', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerow(pose_landmarks)
+                with open(csv_file + "left_hand.csv", mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(left_hand_landmarks)
+                with open(csv_file + "right_hand.csv", mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(right_hand_landmarks)
+            else:
+                with open(csv_file + "landmarks.csv", mode='a', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(pose_landmarks + left_hand_landmarks[1:] + right_hand_landmarks[1:])
 
             frame_count += 1
 
@@ -107,17 +154,36 @@ if __name__ == "__main__":
     csv_file = "./data/landmarks_output_" + date + ".csv"
 
     parser = argparse.ArgumentParser(description="Process video and extract landmarks.")
-    parser.add_argument("--video", type=str, help="Path to the video file.")
+    parser.add_argument("--video", type=str, required=True, help="Path to the video file.")
     parser.add_argument("--output", type=str, default=csv_file, help="Path to the output CSV file.")
     parser.add_argument("--only_hands", default=False, action="store_true", help="Process only hands.")
+    parser.add_argument("--only_pose", default=False, action="store_true", help="Process only pose.")
+    parser.add_argument("--save_separate", default=False, action="store_true", help="Save separate CSV files for each type of landmark.")
+
+    parser.add_argument("--video_info", default=False, action="store_true", help="Get video information (width, height, fps).")
+
     args = parser.parse_args()
 
-    if args.video:
+    if args.video_info:
+        video_path = args.video
+        print(f"Getting video info for: {video_path}")
+        video_info = get_video_info(video_path)
+        if video_info:
+            width, height, fps = video_info
+            print(f"Width: {width}, Height: {height}, FPS: {fps}")
+        else:
+            print("Could not retrieve video information.")
+
+    elif args.video:
         video_path = args.video
         output_path = args.output
         print(f"Processing video: {video_path}")
 
-        process_video(video_path, output_path, only_hands=args.only_hands)
+        if args.only_hands and args.only_pose:
+            print("Cannot select both hands and pose. Please choose one.")
+            exit(1)            
+
+        process_video(video_path, output_path, only_hands=args.only_hands, only_pose=args.only_pose, save_separate=args.save_separate)
     else:
         print("No video file provided. Using default video.")
 

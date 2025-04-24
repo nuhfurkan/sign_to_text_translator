@@ -34,7 +34,7 @@ This script processes a video file to extract landmarks and outputs the data int
 
 ---
 ```bash
-python mediapipe_holistic.py --video path/to/video.mp4 --output path/to/output.csv
+python mediapipe_holistic.py --video ./data/videos/greet.mp4 --output ./data/greet_output/ --save_separate
 ```
 
 ### pre_processing
