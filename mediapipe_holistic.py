@@ -99,7 +99,7 @@ def process_video(video_path :str, csv_file: str):
 if __name__ == "__main__":
     # Output CSV file
     date = time.strftime("%Y-%m-%d_%H-%M-%S")
-    csv_file = "./data/landmarks_output" + date + ".csv"
+    csv_file = "./data/landmarks_output_" + date + ".csv"
 
     parser = argparse.ArgumentParser(description="Process video and extract landmarks.")
     parser.add_argument("--video", type=str, help="Path to the video file.")

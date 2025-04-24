@@ -308,7 +308,7 @@ if __name__ == "__main__":
     print("Data was read")
     data = skip_blank(data)
     # data.to_csv("./data/landmarks_output.csv", index=False)
-    print("Removed initial blank frames")
+    print("Removed blank frames")
     data = impute_missing_entries(data)
     print("Imputed missing entries")
     data = detect_outliers(data)

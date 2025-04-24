@@ -84,7 +84,7 @@ The motif discovery pipeline performs the following:
 #### 📦 Usage
 
 ```bash
-python find_motifs.py --m 40 --data ./data/normalized_landmarks.csv --plot --save ./output/motifs.csv
+python motifs.py --m 40 --data ./data/normalized_landmarks.csv --plot --save ./output/motifs.csv
 ```
 
 ## Visualization

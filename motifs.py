@@ -78,7 +78,7 @@ if __name__ == '__main__':
     if not os.path.exists("./data/"):
         os.makedirs("./data/")
         
-    mps, motifs_idx, nn_idx = process_motifs(mps={}, indices={}, m=args.m)
+    mps, motifs_idx, nn_idx = process_motifs(mps={}, m=args.m)
 
     if args.plot:
         plot_data(mps, motifs_idx, nn_idx, m=args.m)
