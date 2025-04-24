@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
@@ -127,6 +128,13 @@ def _rotate_single_frame(frame: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rotated_landmarks)
 
 # Impute the NaN values / empty data
+# TODO: imputing missing entries should be applied only for a limited number of consequtive NaN values
+"""
+ Explanation: Some gestures requires only single hand movements
+ so the other hand might be visible and recorded as NaN,
+ for such cases we should not impute the missing data. 
+ This could be achieved by putting a limit for consequtive Nan value imputing.
+"""
 def impute_missing_entries(df: pd.DataFrame, k_neighbors=3, save=False, name="./data/completed_data.csv") -> Optional[pd.DataFrame]:
     """
     Automatically detects and imputes missing values in all columns based on gap length.
@@ -288,41 +296,48 @@ def skip_initial_blank(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
-def skip_blank(data: pd.DataFrame) -> pd.DataFrame:
+def skip_blank(data: pd.DataFrame, save: bool = False, name: str = "./data/trimmed_data.csv") -> pd.DataFrame:
     # Remove rows where all values are NaN
-    data = data.dropna(how='any')
+    data = data.dropna(how='all')
+    print(data.shape)
     data = data.reset_index(drop=True)
+    if save:
+        data.to_csv(name, index=False)
     return data
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Preprocess landmark data")
     parser.add_argument("--data", type=str, required=True, help="Path to the data file.")
-    parser.add_argument("--save_imputed", type=str, help="Save imputed data to a file.")
-    parser.add_argument("--save_translated_hands", help="Save translated hands to a file.")
-    parser.add_argument("--save_rotated", help="Save rotated data to a file.")
+    parser.add_argument("--save_imputed", default=True, help="Save imputed data to a file.")
+    parser.add_argument("--save_translated_hands", default=True, help="Save translated hands to a file.")
+    parser.add_argument("--save_rotated", default=True, help="Save rotated data to a file.")
     parser.add_argument("--save_normalized", default=True, help="Save normalized data to a file.")
+    parser.add_argument("--save_trimmed", default=True, help="Save trimmed data to a file.")
+    parser.add_argument("--out_folder", type=str, default="./data/", help="Output folder for processed data.")
 
     args = parser.parse_args()
 
-    data = read_data("./data/landmarks_output.csv")
+    if not os.path.exists(args.out_folder):
+        os.makedirs(args.out_folder)
+
+    data = read_data(args.data)
     print("Data was read")
-    data = skip_blank(data)
-    # data.to_csv("./data/landmarks_output.csv", index=False)
+    data = skip_blank(data, save=args.save_trimmed, name=args.out_folder + "trimmed_data.csv")
     print("Removed blank frames")
     data = impute_missing_entries(data)
     print("Imputed missing entries")
     data = detect_outliers(data)
     print("Detected outliers")
-    data = impute_missing_entries(data, save=args.save_imputed)
+    data = impute_missing_entries(data, save=args.save_imputed, name=args.out_folder + "completed_data.csv")
     print("Imputed missing entries again")
-    data = translate_hands(data, save=args.save_translated_hands)
+    data = translate_hands(data, save=args.save_translated_hands, name=args.out_folder + "translated_hands.csv")
     print("Translated hands")
     # TODO: data smooting should be imporved
     data = smooth(data)
     print("Smoothing done")
-    data = rotate(data, save=args.save_rotated)
+    data = rotate(data, save=args.save_rotated, name=args.out_folder + "rotated_landmarks.csv")
     print("Rotated data")
-    data = normalize(data, save=args.save_normalized)
+    data = normalize(data, save=args.save_normalized, name=args.out_folder + "normalized_landmarks.csv")
     print("Normalized data")
 # print(data.head())
 
