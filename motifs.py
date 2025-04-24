@@ -5,16 +5,16 @@ import matplotlib.pyplot as plt
 import argparse
 import os
 
-df = pd.read_csv('./data/normalized_landmarks.csv')
+# df = pd.read_csv('./data/normalized_landmarks.csv')
 
 # Uncomment to work with only pose_0
 # df = df.iloc[:, 1:4]
 
-def process_motifs(mps, m):
+def process_motifs(data: pd.DataFrame, mps, m):
     """
     Process the motifs and nearest neighbors.
     """
-    mps, indices = stumpy.mstump(df, m)
+    mps, indices = stumpy.mstump(data, m)
 
     '''
     Starting with motifs_idx and nn_idx go m steps forward
@@ -30,12 +30,12 @@ def process_motifs(mps, m):
 
     return mps, motifs_idx, nn_idx
 
-def plot_data(mps, motifs_idx, nn_idx, m):
+def plot_data(data: pd.DataFrame, mps, motifs_idx, nn_idx, m):
     fig, axs = plt.subplots(mps.shape[0] * 2, sharex=True, gridspec_kw={'hspace': 0})
 
-    for k, dim_name in enumerate(df.columns):
+    for k, dim_name in enumerate(data.columns):
         axs[k].set_ylabel(dim_name, fontsize='20')
-        axs[k].plot(df[dim_name])
+        axs[k].plot(data[dim_name])
         axs[k].set_xlabel('Time', fontsize ='20')
 
         axs[k + mps.shape[0]].set_ylabel(dim_name.replace('T', 'P'), fontsize='20')
@@ -48,8 +48,8 @@ def plot_data(mps, motifs_idx, nn_idx, m):
         axs[k + mps.shape[0]].axvline(x=nn_idx[1], linestyle="dashed", c='black')
 
         if dim_name != 'T3':
-            axs[k].plot(range(motifs_idx[k], motifs_idx[k] + m), df[dim_name].iloc[motifs_idx[k] : motifs_idx[k] + m], c='red', linewidth=4)
-            axs[k].plot(range(nn_idx[k], nn_idx[k] + m), df[dim_name].iloc[nn_idx[k] : nn_idx[k] + m], c='red', linewidth=4)
+            axs[k].plot(range(motifs_idx[k], motifs_idx[k] + m), data[dim_name].iloc[motifs_idx[k] : motifs_idx[k] + m], c='red', linewidth=4)
+            axs[k].plot(range(nn_idx[k], nn_idx[k] + m), data[dim_name].iloc[nn_idx[k] : nn_idx[k] + m], c='red', linewidth=4)
             axs[k + mps.shape[0]].plot(motifs_idx[k], mps[k, motifs_idx[k]] + 1, marker="v", markersize=10, color='red')
             axs[k + mps.shape[0]].plot(nn_idx[k], mps[k, nn_idx[k]] + 1, marker="v", markersize=10, color='red')
         else:
@@ -77,8 +77,10 @@ if __name__ == '__main__':
 
     if not os.path.exists("./data/"):
         os.makedirs("./data/")
-        
-    mps, motifs_idx, nn_idx = process_motifs(mps={}, m=args.m)
+
+    data = pd.read_csv(args.data)    
+    
+    mps, motifs_idx, nn_idx = process_motifs(data, mps={}, m=args.m)
 
     if args.plot:
         plot_data(mps, motifs_idx, nn_idx, m=args.m)
@@ -86,6 +88,6 @@ if __name__ == '__main__':
     data = save_motifs(mps, motifs_idx, nn_idx)
     print(data.head())
     
-    data.to_csv('./data/motifs.csv', index=False)
+    data.to_csv(args.save, index=False)
 
 # TODO: not all motifs are detected
