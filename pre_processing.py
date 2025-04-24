@@ -152,7 +152,7 @@ def impute_missing_entries(df: pd.DataFrame, k_neighbors=3, save=False, name="./
         # Apply different methods based on gap length
         for gap_id, length in gap_lengths.items():
             if gap_id == 0:  # Skip if no missing data
-                continue
+                pass  # Placeholder to indicate no further action here
 
             if length <= 2:
                 # Short gaps: Linear interpolation
@@ -288,6 +288,12 @@ def skip_initial_blank(data: pd.DataFrame) -> pd.DataFrame:
 
     return data
 
+def skip_blank(data: pd.DataFrame) -> pd.DataFrame:
+    # Remove rows where all values are NaN
+    data = data.dropna(how='any')
+    data = data.reset_index(drop=True)
+    return data
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Preprocess landmark data")
     parser.add_argument("--data", type=str, required=True, help="Path to the data file.")
@@ -300,8 +306,8 @@ if __name__ == "__main__":
 
     data = read_data("./data/landmarks_output.csv")
     print("Data was read")
-    # TODO: implement trimming empty reads at the end and blank frames (which supposed to be blank)
-    data = skip_initial_blank(data)
+    data = skip_blank(data)
+    # data.to_csv("./data/landmarks_output.csv", index=False)
     print("Removed initial blank frames")
     data = impute_missing_entries(data)
     print("Imputed missing entries")
