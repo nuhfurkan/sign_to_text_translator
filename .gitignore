@@ -4,7 +4,6 @@ mathew1.1.mp4
 test_video.mp4
 test_video_1.mp4
 test.mp4
-landmarks_output.csv
-completed_data.csv
+*.csv
 data/*
 motif_search.py
