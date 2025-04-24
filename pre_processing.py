@@ -14,7 +14,7 @@ def read_data(path):
     data = pd.read_csv(path)
 
     # remove the first column - frame
-    data = data.drop(data.columns[0], axis=1)
+    # data = data.drop(data.columns[0], axis=1)
 
     return data
 
@@ -200,6 +200,7 @@ def smooth(data: pd.DataFrame, alpha=0.4, columns=None) -> pd.DataFrame:
     """
     if columns is None:
         columns = data.columns
+        columns = columns.drop('frame')  # Exclude non-numeric columns
 
     smoothed_data = data.copy()
     prev_frame = data.iloc[0].copy()
@@ -298,7 +299,7 @@ def skip_initial_blank(data: pd.DataFrame) -> pd.DataFrame:
 
 def skip_blank(data: pd.DataFrame, save: bool = False, name: str = "./data/trimmed_data.csv") -> pd.DataFrame:
     # Remove rows where all values are NaN
-    data = data.dropna(how='all')
+    data = data.dropna(thresh=data.columns.size-1)
     print(data.shape)
     data = data.reset_index(drop=True)
     if save:
