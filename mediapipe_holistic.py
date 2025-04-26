@@ -158,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, default=csv_file, help="Path to the output CSV file.")
     parser.add_argument("--only_hands", default=False, action="store_true", help="Process only hands.")
     parser.add_argument("--only_pose", default=False, action="store_true", help="Process only pose.")
-    parser.add_argument("--save_separate", default=False, action="store_true", help="Save separate CSV files for each type of landmark.")
+    parser.add_argument("--save_together", default=False, action="store_true", help="Save together CSV files for each type of landmark.")
 
     parser.add_argument("--video_info", default=False, action="store_true", help="Get video information (width, height, fps).")
 
