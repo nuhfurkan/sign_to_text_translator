@@ -62,7 +62,7 @@ Each transformation can optionally be saved to a file using corresponding comman
 #### 📦 Usage
 
 ```bash
-python preprocess.py --data ./data/landmarks_output.csv 
+python pre_process.py --data ./data/landmarks_output.csv --out_folder ./data/results_folder
 ```
 ### motifs
 
@@ -100,4 +100,9 @@ Visualise selected columns for processed motifs data.
 ## PCA
 ```bash
 python pca.py --data ./data/path_to_file.csv --save ./data/principals
+```
+
+## Segmentation
+```bash
+python segmentation.py --data ./data/data_nomalized_path.csv --save ./data/save_path.csv --m 30
 ```

@@ -24,8 +24,8 @@ def process_motifs(data: pd.DataFrame, mps, m):
     motifs_idx = np.argmin(mps, axis=1)
     nn_idx = indices[np.arange(len(motifs_idx)), motifs_idx]
 
-    print(motifs_idx)
-    print(nn_idx)
+    # print(motifs_idx)
+    # print(nn_idx)
     '''---------------------------'''
 
     return mps, motifs_idx, nn_idx
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         plot_data(mps, motifs_idx, nn_idx, m=args.m)
     
     data = save_motifs(mps, motifs_idx, nn_idx)
-    print(data.head())
+    # print(data.head())
     
     data.to_csv(args.save, index=False)
 
