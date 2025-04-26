@@ -46,7 +46,7 @@ def normalize(data: pd.DataFrame, save=False, name="./data/normalized_landmarks.
         )
 
     if save:
-        data.to_csv(name, index=False)
+        data.to_csv(name)
 
     return data
 
@@ -62,20 +62,28 @@ def rotate(data: pd.DataFrame, frame_idx=None, save=False, name="./data/rotated_
     Returns:
     DataFrame or np.array of rotated landmarks
     """
+
+    or_data = data.copy()
+    data = data.drop(columns=["frame"])
+    
     if frame_idx is not None:
         # Process a single frame
         frame = data.iloc[frame_idx]
         return _rotate_single_frame(frame)
+    
     else:
         # Process all frames sequentially
         rotated_data = []
         for i in range(len(data)):
             rotated_data.append(_rotate_single_frame(data.iloc[i]).values.flatten().T)
 
+        res = pd.DataFrame(rotated_data, columns=data.columns)
+        res.insert(0, "frame", or_data["frame"].values)
+
         if save:
-            pd.DataFrame(rotated_data, columns=["frame"].extend(data.columns)).to_csv(name)
-                       
-        return pd.DataFrame(rotated_data, columns=["frame"].extend(data.columns))
+            res.to_csv(name)
+
+        return res
 
 
 def _rotate_single_frame(frame: pd.DataFrame) -> pd.DataFrame:
