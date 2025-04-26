@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import argparse
 
-def find_segments(m: int = 30, save: bool = False) -> pd.DataFrame:
+def find_segments(m: int = 30, save: str = "") -> pd.DataFrame:
     X = pd.read_csv("./data/greet_right_hand/normalized_landmarks.csv")
     X_reduced = np.linalg.norm(X, axis=1)
     m = 30  # subsequence length
@@ -13,8 +13,8 @@ def find_segments(m: int = 30, save: bool = False) -> pd.DataFrame:
     cac, regime_locations = stumpy.fluss(mp[:, 1], L=10, n_regimes=2, excl_factor=1)
     res = pd.DataFrame(cac, columns=["CAC"], index=X["frame"].iloc[:len(X["frame"]) - m + 1])
     
-    if save:
-        res.to_csv("./data/cac.csv")
+    if save != "":
+        res.to_csv(save)
 
     return res
 
@@ -46,7 +46,7 @@ def find_local_minima(df: pd.DataFrame, column_name: str) -> list[float]:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Find segments in time series data.")
-    parser.add_argument("--save", action="store_true", help="Save the results to a CSV file.")
+    parser.add_argument("--save", type=str, default="", help="Save the results to a CSV file.")
     parser.add_argument("--data", type=str, default="./data/greet_right_hand/normalized_landmarks.csv", help="Path to the data file.")
     parser.add_argument("--m", type=int, default=30, help="Length of the motif.")
 

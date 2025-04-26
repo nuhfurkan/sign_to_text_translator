@@ -309,14 +309,15 @@ def skip_blank(data: pd.DataFrame, save: bool = False, name: str = "./data/trimm
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Preprocess landmark data")
     parser.add_argument("--data", type=str, required=True, help="Path to the data file.")
-    parser.add_argument("--save_imputed", default=True, help="Save imputed data to a file.")
-    parser.add_argument("--save_translated_hands", default=True, help="Save translated hands to a file.")
-    parser.add_argument("--save_rotated", default=True, help="Save rotated data to a file.")
-    parser.add_argument("--save_normalized", default=True, help="Save normalized data to a file.")
-    parser.add_argument("--save_trimmed", default=True, help="Save trimmed data to a file.")
+    parser.add_argument("--save_imputed", type=bool, default=True, help="Save imputed data to a file.")
+    parser.add_argument("--save_translated_hands", type=bool, default=True, help="Save translated hands to a file.")
+    parser.add_argument("--save_rotated", type=bool, default=True, help="Save rotated data to a file.")
+    parser.add_argument("--save_normalized", type=bool, default=True, help="Save normalized data to a file.")
+    parser.add_argument("--save_trimmed", type=bool, default=True, help="Save trimmed data to a file.")
     parser.add_argument("--out_folder", type=str, default="./data/", help="Output folder for processed data.")
 
     parser.add_argument("--hands_data", default=False, action="store_true", help="Process only hands data.")
+    parser.add_argument("--pose_data", default=False, action="store_true", help="Process only pose data.")
 
     args = parser.parse_args()
 
@@ -338,7 +339,7 @@ if __name__ == "__main__":
     data = impute_missing_entries(data, save=args.save_imputed, name=args.out_folder + "completed_data.csv")
     print("Imputed missing entries again")
     
-    if not args.hands_data:    
+    if not args.hands_data and not args.pose_data:    
         data = translate_hands(data, save=args.save_translated_hands, name=args.out_folder + "translated_hands.csv")
         print("Translated hands")
     
@@ -346,7 +347,7 @@ if __name__ == "__main__":
     data = smooth(data)
     print("Smoothing done")
     
-    if not args.hands_data:
+    if not args.hands_data and not args.pose_data:
         data = rotate(data, save=args.save_rotated, name=args.out_folder + "rotated_landmarks.csv")
         print("Rotated data")
     
