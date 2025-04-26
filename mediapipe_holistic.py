@@ -121,7 +121,7 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False, only
             # print(frame_landmarks)
 
             # Save to CSV
-            if save_together:
+            if not save_together:
                 if not only_hands:
                     with open(csv_file + "pose.csv", mode='a', newline='') as file:
                         writer = csv.writer(file)
