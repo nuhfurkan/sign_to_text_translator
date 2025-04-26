@@ -73,9 +73,9 @@ def rotate(data: pd.DataFrame, frame_idx=None, save=False, name="./data/rotated_
             rotated_data.append(_rotate_single_frame(data.iloc[i]).values.flatten().T)
 
         if save:
-            pd.DataFrame(rotated_data, columns=data.columns).to_csv(name)
+            pd.DataFrame(rotated_data, columns=["frame"].extend(data.columns)).to_csv(name)
                        
-        return pd.DataFrame(rotated_data, columns=data.columns)
+        return pd.DataFrame(rotated_data, columns=["frame"].extend(data.columns))
 
 
 def _rotate_single_frame(frame: pd.DataFrame) -> pd.DataFrame:

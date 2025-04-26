@@ -34,9 +34,9 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False, only
         os.mkdir(csv_file)
     
     # Landmark names for CSV headers
-    pose_landmarks = ["frame"] + [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z']]
-    left_hand_landmarks = ["frame"] + [f'left_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
-    right_hand_landmarks = ["frame"] + [f'right_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
+    pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z']]
+    left_hand_landmarks = [f'left_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
+    right_hand_landmarks = [f'right_hand_{i}_{coord}' for i in range(21) for coord in ['x', 'y', 'z']]
     # face_landmarks = [f'face_{i}_{coord}' for i in range(468) for coord in ['x', 'y', 'z']]
 
     columns = []
@@ -49,7 +49,7 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False, only
         columns = ["frame"] + pose_landmarks + left_hand_landmarks + right_hand_landmarks  # + face_landmarks
 
     # Create a CSV file and write the header
-    if save_together:
+    if not save_together:
         with open(csv_file + "pose.csv", mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(pose_landmarks)
