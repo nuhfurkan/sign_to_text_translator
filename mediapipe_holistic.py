@@ -26,7 +26,7 @@ def get_video_info(video_path: str):
     return width, height, fps
 
 
-def process_video(video_path :str, csv_file: str, only_hands: bool = False, only_pose: bool = False, save_separate: bool = False):
+def process_video(video_path :str, csv_file: str, only_hands: bool = False, only_pose: bool = False, save_together: bool = False):
     # Open video file
     cap = cv2.VideoCapture(video_path)
 
@@ -49,7 +49,7 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False, only
         columns = ["frame"] + pose_landmarks + left_hand_landmarks + right_hand_landmarks  # + face_landmarks
 
     # Create a CSV file and write the header
-    if save_separate:
+    if save_together:
         with open(csv_file + "pose.csv", mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(pose_landmarks)
@@ -121,7 +121,7 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False, only
             # print(frame_landmarks)
 
             # Save to CSV
-            if save_separate:
+            if save_together:
                 if not only_hands:
                     with open(csv_file + "pose.csv", mode='a', newline='') as file:
                         writer = csv.writer(file)
@@ -183,7 +183,7 @@ if __name__ == "__main__":
             print("Cannot select both hands and pose. Please choose one.")
             exit(1)            
 
-        process_video(video_path, output_path, only_hands=args.only_hands, only_pose=args.only_pose, save_separate=args.save_separate)
+        process_video(video_path, output_path, only_hands=args.only_hands, only_pose=args.only_pose, save_together=args.save_together)
     else:
         print("No video file provided. Using default video.")
 

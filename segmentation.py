@@ -7,7 +7,6 @@ import argparse
 def find_segments(m: int = 30, save: str = "") -> pd.DataFrame:
     X = pd.read_csv("./data/greet_right_hand/normalized_landmarks.csv")
     X_reduced = np.linalg.norm(X, axis=1)
-    m = 30  # subsequence length
     mp = stumpy.stump(X_reduced, m)
 
     cac, regime_locations = stumpy.fluss(mp[:, 1], L=10, n_regimes=2, excl_factor=1)
