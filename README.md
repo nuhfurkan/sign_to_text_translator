@@ -96,3 +96,8 @@ Reconstruct a stickman out of generated landmarks.
 
 ### visualise_motifs.py
 Visualise selected columns for processed motifs data.
+
+## PCA
+```bash
+python pca.py --data ./data/path_to_file.csv --save ./data/principals
+```

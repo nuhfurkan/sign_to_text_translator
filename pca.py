@@ -3,64 +3,70 @@ import numpy as np
 from sklearn.decomposition import PCA
 from typing import Tuple
 from typing import Optional
+import argparse
+from sklearn.preprocessing import StandardScaler
 
 # Reads data and groups the x,y,z coordinates of each landmark together
 def read_group_data(path) -> pd.DataFrame:
     pure_data = pd.read_csv(path)
-    # pure_data = pure_data.drop(pure_data.columns[0], axis=1)  # remove the first column - frame
+    pure_data = pure_data.drop(pure_data.columns[0], axis=1)  # remove the first column - frame
 
-    landmarks = sorted(set(col.rsplit('_', 1)[0] for col in pure_data.columns))
+    # Create a new DataFrame with lists
+    # landmarks = sorted(set(col.rsplit('_', 1)[0] for col in pure_data.columns))
+    # df_tuples = pd.DataFrame({
+    #     landmark: list(list(elem) for elem in  zip(pure_data[f"{landmark}_x"], pure_data[f"{landmark}_y"], pure_data[f"{landmark}_z"])) for
+    #     landmark in landmarks
+    # })
 
-    # Create a new DataFrame with tuples
-    df_tuples = pd.DataFrame({
-        landmark: list(zip(pure_data[f"{landmark}_x"], pure_data[f"{landmark}_y"], pure_data[f"{landmark}_z"])) for
-        landmark in landmarks
-    })
+    return pure_data
 
-    return df_tuples
-
-
-def pca_importance_scores(data: pd.DataFrame, n_components: Optional[int] = None, save=False,
-                          name="./data/pca_importance_list.csv") -> Optional[pd.DataFrame]:
-    """
-    Performs PCA and calculates importance scores for each (x, y, z) landmark.
-
-    Parameters:
-    - data (pd.DataFrame): Input data where columns represent coordinates (x_1, y_1, z_1, x_2, y_2, z_2, ...).
-    - n_components (int, optional): Number of PCA components to retain.
-
-    Returns:
-    - pd.DataFrame: Importance scores per landmark.
-    """
-    num_landmarks = data.shape[1] // 3  # Total landmarks in data
-
-    if n_components is None:
-        n_components = min(data.shape[0], data.shape[1])  # Use all possible components if not specified
+def pca_importance_scores(data: pd.DataFrame, normalised: True) -> Optional[pd.DataFrame]:
+    num_landmarks = int(data.shape[1] // 3)  # Total landmarks in data
 
     # Apply PCA
-    pca = PCA(n_components=n_components)
-    pca.fit(data)
+    if not normalised:
+        X = np.array(data)
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        data = pd.DataFrame(X_scaled, columns=data.columns)
 
-    # Explained variance per component
-    explained_variance = pca.explained_variance_ratio_  # Importance of each PC
+    pca = PCA()
+    pca.fit_transform(data)
+
+    components = pca.components_
+    components_df = pd.DataFrame(components, columns=data.columns)
+    components_df_abs = components_df.abs()
+    feature_scores = components_df_abs.sum(axis=0)
+    sorted_features = feature_scores.sort_values(ascending=False)
 
     # Aggregate scores per landmark (each has 3 coordinates)
     landmark_scores = []
-    for i in range(num_landmarks):
-        score = sum(explained_variance[i * 3: (i + 1) * 3])  # Sum importance of x, y, z for each landmark
+    for i in range(feature_scores.shape[0] // 3):
+        score = sum(feature_scores[i * 3: (i + 1) * 3])  # Sum importance of x, y, z for each landmark
         landmark_scores.append(score)
 
     # Create DataFrame for scores
-    landmark_names = [f'Landmark_{i + 1}' for i in range(num_landmarks)]
-    scores_df = pd.DataFrame({'Landmark': landmark_names, 'Importance Score': landmark_scores})
+    landmark_names = [f'Landmark_{i}' for i in range(num_landmarks)]
+    scores_df = pd.DataFrame({'Landmark': landmark_names, 'Importance Score': landmark_scores}).sort_values(by='Importance Score', ascending=False)
 
-    return scores_df.sort_values(by="Importance Score", ascending=False)  # Sort by importance
+    return scores_df, sorted_features
 
-# Example Usage
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="PCA Importance Scores")
+    parser.add_argument("--data", type=str, default="./data/normalized_landmarks.csv", help="Path to the data file.")
+    parser.add_argument("--save", type=str, default="", help="Path to save the importance scores.")
+    parser.add_argument("--normalised", default=True, action="store_true", help="Use normalised data.")
 
-data = read_group_data("./data/normalized_landmarks.csv")
+    args = parser.parse_args()
 
-# importance_df = pca_importance_scores(data=data, n_components=0.95)
-# print(importance_df)
+    # Example usage
+    data = read_group_data(args.data)
+    print("Data loaded successfully.")
 
-data.to_csv("./data/landmarks_grouped.csv", index=False)
+    importance_df, feature_impact = pca_importance_scores(data=data, normalised=args.normalised)
+    print("PCA importance scores calculated successfully.")
+
+    if args.save != "":
+        importance_df.to_csv(args.save + "_aggragted_values.csv", index=False)
+        feature_impact.to_csv(args.save + "_values.csv", index=True, header="Score")   
+        print(f"Importance scores saved to {args.save}")
