@@ -394,8 +394,8 @@ def main():
         num_layers=args.num_layers,
         max_sequence_length=args.max_seq_len,
         kn_vocab_size=len(tgt_tokenizer.vocab) + len(tgt_tokenizer.special_tokens),
-        english_to_index=src_tokenizer,
-        kannada_to_index=tgt_tokenizer,
+        sign_tokenizer=src_tokenizer,
+        english_tokenizer=tgt_tokenizer,
         START_TOKEN=START_TOKEN,
         END_TOKEN=END_TOKEN,
         PADDING_TOKEN=PADDING_TOKEN
