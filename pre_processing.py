@@ -193,7 +193,7 @@ def impute_missing_entries(df: pd.DataFrame, k_neighbors=3, save=False, name="./
 
 
 # Smooth
-# TODO: Imrove the smoothing function performance-wise
+# TODO: Improve the smoothing function performance-wise
 def smooth(data: pd.DataFrame, alpha=0.4, columns=None) -> pd.DataFrame:
     """
     Apply exponential moving average smoothing to a DataFrame of landmark data.
