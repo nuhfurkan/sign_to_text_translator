@@ -46,7 +46,7 @@ def normalize(data: pd.DataFrame, save=False, name="./data/normalized_landmarks.
         )
 
     if save:
-        data.to_csv(name)
+        data.to_csv(name, index=False)
 
     return data
 
@@ -81,7 +81,7 @@ def rotate(data: pd.DataFrame, frame_idx=None, save=False, name="./data/rotated_
         res.insert(0, "frame", or_data["frame"].values)
 
         if save:
-            res.to_csv(name)
+            res.to_csv(name, index=False)
 
         return res
 
@@ -307,8 +307,8 @@ def skip_initial_blank(data: pd.DataFrame) -> pd.DataFrame:
 
 def skip_blank(data: pd.DataFrame, save: bool = False, name: str = "./data/trimmed_data.csv") -> pd.DataFrame:
     # Remove rows where all values are NaN
-    data = data.dropna(thresh=data.columns.size-1)
-    print(data.shape)
+    data = data.dropna(thresh=2)
+    # print(data.shape)
     data = data.reset_index(drop=True)
     if save:
         data.to_csv(name, index=False)
