@@ -9,6 +9,7 @@ from bpe import BasicTokenizer
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import time
 import random
+import torchmetrics.text
 
 # Constants
 START_TOKEN = '<STR>'
@@ -193,7 +194,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, scheduler
         avg_train_loss = total_loss / len(train_loader)
 
         # Validation step
-        val_loss = evaluate(model, val_loader, criterion, target_padding_idx)
+        val_loss, bleu_score, chrf_score, wer_score = evaluate(model, val_loader, criterion, target_padding_idx)
 
         # Update learning rate based on validation loss
         if scheduler_type == "plateau":
@@ -205,6 +206,7 @@ def train_model(model, train_loader, val_loader, optimizer, scheduler, scheduler
         epoch_time = time.time() - epoch_start_time
         print(f"Epoch {epoch + 1} completed in {epoch_time:.2f}s")
         print(f"Train Loss: {avg_train_loss:.4f}, Validation Loss: {val_loss:.4f}")
+        print(f"BLEU Score: {bleu_score:.4f}, CHRF Score: {chrf_score:.4f}, WER Score: {wer_score:.4f}")
         print(f"Current LR: {optimizer.param_groups[0]['lr']:.6f}")
 
         # Save model if it's the best so far
@@ -244,6 +246,13 @@ def evaluate(model, val_loader, criterion, target_padding_idx):
     model.eval()
     total_loss = 0
 
+    bleu_metric = torchmetrics.text.BLEUScore().to(DEVICE)
+    chrf_metric = torchmetrics.text.CHRFScore().to(DEVICE)
+    wer_metric = torchmetrics.text.WordErrorRate().to(DEVICE)
+
+    all_predictions = []
+    all_targets = []
+
     with torch.no_grad():
         for batch in val_loader:
             src_batch, tgt_batch = batch
@@ -280,9 +289,38 @@ def evaluate(model, val_loader, criterion, target_padding_idx):
 
             total_loss += loss.item()
 
+            # Get predicted tokens for BLEU calculation
+            pred_indices = torch.argmax(predictions, dim=-1)
+
+            # Convert token indices to text for BLEU calculation
+            for i in range(len(src_batch)):
+                # Get prediction and target sequences
+                pred_tokens = pred_indices[i].cpu().tolist()
+                target_tokens = labels[i].cpu().tolist()
+
+                # Filter out padding tokens
+                pred_tokens = [t for t in pred_tokens if t != target_padding_idx]
+                target_tokens = [t for t in target_tokens if t != target_padding_idx]
+
+                # Decode using tokenizer
+                pred_text = model.decoder.sentence_embedding.tokenizer.decode(pred_tokens)
+                target_text = model.decoder.sentence_embedding.tokenizer.decode(target_tokens)
+
+                # Format for BLEU calculation (required format: [['candidate']], [[['reference']]])
+                all_predictions.append([pred_text.split()])
+                all_targets.append([[target_text.split()]])
+
     avg_loss = total_loss / len(val_loader)
+
+    bleu_metric.update(all_predictions, all_targets)
+    chrf_metric.update(all_predictions, all_targets)
+    wer_metric.update(all_predictions, all_targets)
+    bleu_score = bleu_metric.compute()
+    chrf_score = chrf_metric.compute()
+    wer_score = wer_metric.compute()
+
     model.train()
-    return avg_loss
+    return avg_loss, bleu_score, chrf_score, wer_score
 
 
 def main():
@@ -291,6 +329,8 @@ def main():
     parser.add_argument("--tgt_file", type=str, required=True, help="Path to target language file")
     parser.add_argument("--val_src_file", type=str, help="Path to validation source language file")
     parser.add_argument("--val_tgt_file", type=str, help="Path to validation target language file")
+    parser.add_argument("--src_tokenizer", type=str, help="Path to source tokenizer file")
+    parser.add_argument("--tgt_tokenizer", type=str, help="Path to target tokenizer file")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
     parser.add_argument("--epochs", type=int, default=5, help="Number of training epochs")
     parser.add_argument("--d_model", type=int, default=512, help="Model dimension")
@@ -311,7 +351,7 @@ def main():
         src_sentences = [line.strip().lower() for line in f]
 
     with open(args.tgt_file, 'r', encoding='utf-8') as f:
-        tgt_sentences = [line.strip() for line in f]
+        tgt_sentences = [line.strip().lower() for line in f]
 
     # Load validation data if provided
     val_src_sentences = []
@@ -321,7 +361,7 @@ def main():
             val_src_sentences = [line.strip().lower() for line in f]
 
         with open(args.val_tgt_file, 'r', encoding='utf-8') as f:
-            val_tgt_sentences = [line.strip() for line in f]
+            val_tgt_sentences = [line.strip().lower() for line in f]
 
         print(f"Loaded {len(val_src_sentences)} validation examples")
     else:
@@ -336,21 +376,36 @@ def main():
     src_tokenizer = BasicTokenizer()
     tgt_tokenizer = BasicTokenizer()
 
-    # Register special tokens
-    special_tokens = {
-        START_TOKEN: len(src_tokenizer.vocab),
-        END_TOKEN: len(src_tokenizer.vocab) + 1,
-        PADDING_TOKEN: len(src_tokenizer.vocab) + 2
-    }
-    src_tokenizer.register_special_tokens(special_tokens)
-    tgt_tokenizer.register_special_tokens(special_tokens)
+    if args.src_tokenizer:
+        src_tokenizer.load(args.src_tokenizer)
+    else:
+        # Register special tokens
+        special_tokens = {
+            START_TOKEN: len(src_tokenizer.vocab),
+            END_TOKEN: len(src_tokenizer.vocab) + 1,
+            PADDING_TOKEN: len(src_tokenizer.vocab) + 2
+        }
+        src_tokenizer.register_special_tokens(special_tokens)
+        # Train tokenizers on respective corpus
+        print("Training source tokenizer...")
+        src_tokenizer.train(''.join(src_sentences), args.vocab_size, verbose=True)
+        src_tokenizer.save("src_tokenizer")
 
-    # Train tokenizers on respective corpus
-    print("Training source tokenizer...")
-    src_tokenizer.train(''.join(src_sentences), args.vocab_size)
 
-    print("Training target tokenizer...")
-    tgt_tokenizer.train(''.join(tgt_sentences), args.vocab_size)
+    if args.tgt_tokenizer:
+        tgt_tokenizer.load(args.tgt_tokenizer)
+    else:
+        # Register special tokens
+        special_tokens = {
+            START_TOKEN: len(tgt_tokenizer.vocab),
+            END_TOKEN: len(tgt_tokenizer.vocab) + 1,
+            PADDING_TOKEN: len(tgt_tokenizer.vocab) + 2
+        }
+        tgt_tokenizer.register_special_tokens(special_tokens)
+        # Train tokenizers on respective corpus
+        print("Training target tokenizer...")
+        tgt_tokenizer.train(''.join(tgt_sentences), args.vocab_size, verbose=True)
+        tgt_tokenizer.save("tgt_tokenizer")
 
     # If no validation files were provided, split training data
     if not val_src_sentences:
@@ -408,7 +463,7 @@ def main():
     # Configure learning rate scheduler
     scheduler = None
     if args.scheduler == "plateau":
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2, verbose=True)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
     elif args.scheduler == "cosine":
         from torch.optim.lr_scheduler import CosineAnnealingLR
         scheduler = CosineAnnealingLR(optimizer, T_max=args.epochs, eta_min=1e-5)

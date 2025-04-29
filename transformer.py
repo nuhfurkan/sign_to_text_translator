@@ -55,12 +55,21 @@ class SentenceEmbedding(nn.Module):
     def batch_tokenize(self, batch, start_token, end_token):
         def tokenize(sentence, start_token, end_token):
             sentence_word_indices = self.tokenizer.encode(sentence)
+
+            # Add special tokens
             if start_token:
                 sentence_word_indices.insert(0, self.tokenizer.special_tokens[self.START_TOKEN])
             if end_token:
                 sentence_word_indices.append(self.tokenizer.special_tokens[self.END_TOKEN])
+
+            # Truncate if the sequence is too long
+            if len(sentence_word_indices) > self.max_sequence_length:
+                sentence_word_indices = sentence_word_indices[:self.max_sequence_length]
+
+            # Pad if the sequence is too short
             for _ in range(len(sentence_word_indices), self.max_sequence_length):
                 sentence_word_indices.append(self.tokenizer.special_tokens[self.PADDING_TOKEN])
+
             return torch.tensor(sentence_word_indices)
 
         tokenized = [tokenize(sentence, start_token, end_token) for sentence in batch]
@@ -282,15 +291,16 @@ class Transformer(nn.Module):
                  num_layers,
                  max_sequence_length,
                  kn_vocab_size,
-                 tokenizer,
+                 sign_tokenizer,
+                 english_tokenizer,
                  START_TOKEN,
                  END_TOKEN,
                  PADDING_TOKEN):
         super().__init__()
         self.encoder = Encoder(d_model, ffn_hidden, num_heads, drop_prob, num_layers, max_sequence_length,
-                               tokenizer, START_TOKEN, END_TOKEN, PADDING_TOKEN)
+                               sign_tokenizer, START_TOKEN, END_TOKEN, PADDING_TOKEN)
         self.decoder = Decoder(d_model, ffn_hidden, num_heads, drop_prob, num_layers, max_sequence_length,
-                               tokenizer, START_TOKEN, END_TOKEN, PADDING_TOKEN)
+                               english_tokenizer, START_TOKEN, END_TOKEN, PADDING_TOKEN)
         self.linear = nn.Linear(d_model, kn_vocab_size)
         self.device = get_device()
 
