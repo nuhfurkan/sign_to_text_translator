@@ -127,6 +127,7 @@ class PositionwiseFeedForward(nn.Module):
         self.linear1 = nn.Linear(d_model, hidden)
         self.linear2 = nn.Linear(hidden, d_model)
         self.relu = nn.ReLU()
+        nn.GELU
         self.dropout = nn.Dropout(p=drop_prob)
 
     def forward(self, x):

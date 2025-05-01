@@ -26,12 +26,12 @@ def get_video_info(video_path: str):
     return width, height, fps
 
 
-def process_video(video_path :str, csv_file: str, only_hands: bool = False, only_pose: bool = False, save_together: bool = False):
+def process_video(video_path :str, csv_folder: str,only_hands: bool = False, only_pose: bool = False, save_together: bool = False):
     # Open video file
     cap = cv2.VideoCapture(video_path)
 
-    if not os.path.exists(csv_file):
-        os.mkdir(csv_file)
+    if not os.path.exists(csv_folder):
+        os.mkdir(csv_folder)
     
     # Landmark names for CSV headers
     pose_landmarks = [f'pose_{i}_{coord}' for i in range(33) for coord in ['x', 'y', 'z']]
@@ -50,17 +50,17 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False, only
 
     # Create a CSV file and write the header
     if not save_together:
-        with open(csv_file + "pose.csv", mode='w', newline='') as file:
+        with open(csv_folder + "\\" + os.path.basename(video_path)[:-4] + "_pose.csv", mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(pose_landmarks)
-        with open(csv_file + "left_hand.csv", mode='w', newline='') as file:
+        with open(csv_folder + "\\" + os.path.basename(video_path)[:-4] + "_left_hand.csv", mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(left_hand_landmarks)
-        with open(csv_file + "right_hand.csv", mode='w', newline='') as file:
+        with open(csv_folder + "\\" + os.path.basename(video_path)[:-4] + "_right_hand.csv", mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(right_hand_landmarks)
     else:
-        with open(csv_file + "landmarks.csv", mode='w', newline='') as file:
+        with open(csv_folder + "\\" + os.path.basename(video_path)[:-4] + "_landmarks.csv", mode='w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(columns)
 
@@ -123,17 +123,17 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False, only
             # Save to CSV
             if not save_together:
                 if not only_hands:
-                    with open(csv_file + "pose.csv", mode='a', newline='') as file:
+                    with open(csv_folder + "\\" + os.path.basename(video_path)[:-4] + "pose.csv", mode='a', newline='') as file:
                         writer = csv.writer(file)
                         writer.writerow(pose_landmarks)
-                with open(csv_file + "left_hand.csv", mode='a', newline='') as file:
+                with open(csv_folder + "\\" + os.path.basename(video_path)[:-4] + "left_hand.csv", mode='a', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow(left_hand_landmarks)
-                with open(csv_file + "right_hand.csv", mode='a', newline='') as file:
+                with open(csv_folder + "\\" + os.path.basename(video_path)[:-4] + "right_hand.csv", mode='a', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow(right_hand_landmarks)
             else:
-                with open(csv_file + "landmarks.csv", mode='a', newline='') as file:
+                with open(csv_folder + "\\" + os.path.basename(video_path)[:-4] + "_landmarks.csv", mode='a', newline='') as file:
                     writer = csv.writer(file)
                     writer.writerow(pose_landmarks + left_hand_landmarks[1:] + right_hand_landmarks[1:])
 
@@ -146,16 +146,16 @@ def process_video(video_path :str, csv_file: str, only_hands: bool = False, only
 
     # Release resources
     cap.release()
-    print(f"Landmarks saved to {csv_file}")
+    print(f"Landmarks saved to {csv_folder}")
 
 if __name__ == "__main__":
     # Output CSV file
     date = time.strftime("%Y-%m-%d_%H-%M-%S")
-    csv_file = "./data/landmarks_output_" + date + ".csv"
+    csv_folder = "./data/landmarks_output_" + date
 
     parser = argparse.ArgumentParser(description="Process video and extract landmarks.")
     parser.add_argument("--video", type=str, required=True, help="Path to the video file.")
-    parser.add_argument("--output", type=str, default=csv_file, help="Path to the output CSV file.")
+    parser.add_argument("--output", type=str, default=csv_folder, help="Path to the output CSV folder.")
     parser.add_argument("--only_hands", default=False, action="store_true", help="Process only hands.")
     parser.add_argument("--only_pose", default=False, action="store_true", help="Process only pose.")
     parser.add_argument("--save_together", default=False, action="store_true", help="Save together CSV files for each type of landmark.")
