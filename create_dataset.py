@@ -52,8 +52,5 @@ if __name__ == "__main__":
 
     video_files = [f for f in os.listdir(dataset_folder) if f.endswith(".mp4")]
 
-    # Choose the number of parallel processes (n). Set to os.cpu_count() or any custom number.
-    n = os.cpu_count()  # or set n = 4, for example
-
-    with ProcessPoolExecutor(max_workers=n) as executor:
+    with ProcessPoolExecutor(max_workers=args.n) as executor:
         executor.map(process_video, video_files)
