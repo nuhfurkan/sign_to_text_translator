@@ -12,16 +12,29 @@ def process_clustering(feature_csv_path: str, output_path: str):
     # Step 1: Load CSV Files
     # ---------------------------
 
-    # Change this path to your directory with motif feature CSVs
-    # feature_csv_path = "./data/motifs_features/*.csv"
-
     csv_files = glob.glob(feature_csv_path)
 
     if not csv_files:
         raise FileNotFoundError("No CSV files found in the specified directory.")
 
-    # Load and concatenate all feature CSVs
-    all_features = pd.concat([pd.read_csv(f) for f in csv_files], ignore_index=True)
+    # List to store valid (non-empty) feature DataFrames
+    valid_features = []
+
+    # Loop through each CSV file and check if it is empty
+    for file in csv_files:
+        df = pd.read_csv(file)
+        
+        if df.empty:
+            print(f"Skipping empty file: {file}")
+        else:
+            valid_features.append(df)
+
+    # If no valid files were found, raise an error
+    if not valid_features:
+        raise ValueError("No valid (non-empty) CSV files found.")
+
+    # Concatenate all valid DataFrames
+    all_features = pd.concat(valid_features, ignore_index=True)
 
     # ---------------------------
     # Step 2: Normalize the Features
@@ -54,7 +67,6 @@ def process_clustering(feature_csv_path: str, output_path: str):
     # Step 5: Save Clustered Results
     # ---------------------------
 
-    # output_path = "./data/motif_clusters.csv"
     all_features.to_csv(output_path, index=False)
     print(f"Clustered motif features saved to: {output_path}")
 
