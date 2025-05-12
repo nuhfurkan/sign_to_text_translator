@@ -246,10 +246,6 @@ def evaluate(model, val_loader, criterion, target_padding_idx):
     model.eval()
     total_loss = 0
 
-    bleu_metric = torchmetrics.text.BLEUScore().to(DEVICE)
-    chrf_metric = torchmetrics.text.CHRFScore().to(DEVICE)
-    wer_metric = torchmetrics.text.WordErrorRate().to(DEVICE)
-
     all_predictions = []
     all_targets = []
 
@@ -289,10 +285,10 @@ def evaluate(model, val_loader, criterion, target_padding_idx):
 
             total_loss += loss.item()
 
-            # Get predicted tokens for BLEU calculation
+            # Get predicted tokens for metrics calculation
             pred_indices = torch.argmax(predictions, dim=-1)
 
-            # Convert token indices to text for BLEU calculation
+            # Convert token indices to text for metrics calculation
             for i in range(len(src_batch)):
                 # Get prediction and target sequences
                 pred_tokens = pred_indices[i].cpu().tolist()
@@ -306,17 +302,30 @@ def evaluate(model, val_loader, criterion, target_padding_idx):
                 pred_text = model.decoder.sentence_embedding.tokenizer.decode(pred_tokens)
                 target_text = model.decoder.sentence_embedding.tokenizer.decode(target_tokens)
 
-                # Format for BLEU calculation (required format: [['candidate']], [[['reference']]])
-                all_predictions.append([pred_text.split()])
-                all_targets.append([[target_text.split()]])
+                # Add to predictions and targets lists
+                all_predictions.append(pred_text)
+                all_targets.append(target_text)  # Just the string, not a list containing the string
 
     avg_loss = total_loss / len(val_loader)
 
-    bleu_metric.update(all_predictions, all_targets)
-    chrf_metric.update(all_predictions, all_targets)
-    wer_metric.update(all_predictions, all_targets)
+    # Create metrics here to ensure they're fresh for each evaluation
+    bleu_metric = torchmetrics.text.BLEUScore().to(DEVICE)
+    chrf_metric = torchmetrics.text.CHRFScore().to(DEVICE)
+    wer_metric = torchmetrics.text.WordErrorRate().to(DEVICE)
+
+    # Wrap targets in list-of-lists for BLEU and CHRF
+    wrapped_targets = [[t] for t in all_targets]
+
+    # BLEU
+    bleu_metric.update(all_predictions, wrapped_targets)
     bleu_score = bleu_metric.compute()
+
+    # CHRF
+    chrf_metric.update(all_predictions, wrapped_targets)
     chrf_score = chrf_metric.compute()
+
+    # WER (expects flat list of strings)
+    wer_metric.update(all_predictions, all_targets)
     wer_score = wer_metric.compute()
 
     model.train()
