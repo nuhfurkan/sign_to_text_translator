@@ -91,8 +91,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Update paths based on command line arguments
-    feature_csv_path = os.path.join(args.input, "*.csv")
-    print(feature_csv_path)
+    feature_csv_path = args.input
     output_path = args.output
 
     process_clustering(feature_csv_path=feature_csv_path, output_path=output_path)
