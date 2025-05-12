@@ -1,6 +1,7 @@
 import pandas as pd
 import glob
 import os
+from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 import hdbscan
@@ -37,23 +38,20 @@ def process_clustering(feature_csv_path: str, output_path: str):
     if not valid_features:
         raise ValueError("No valid (non-empty) CSV files found.")
 
+
     # Concatenate all valid DataFrames
     all_features = pd.concat(valid_features, ignore_index=True)
 
-    # ---------------------------
-    # Step 2: Normalize the Features
-    # ---------------------------
+    # Impute missing values
+    imputer = SimpleImputer(strategy='mean')
+    X_imputed = imputer.fit_transform(all_features)
 
-    # Assuming all columns are numeric from motif_to_feature
+    # Normalize
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(all_features)
+    X_scaled = scaler.fit_transform(X_imputed)
 
-    # ---------------------------
-    # Step 3: Dimensionality Reduction (Optional)
-    # ---------------------------
-
-    # Reduce dimensionality to 10 for better clustering performance
-    pca = PCA(n_components=10)
+    # PCA
+    pca = PCA(n_components=20)
     X_reduced = pca.fit_transform(X_scaled)
 
     # ---------------------------
