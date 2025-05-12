@@ -86,7 +86,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Update paths based on command line arguments
-    feature_csv_path = args.input
+    right_hands = os.path.join(args.input, "*_right_hand.csv")
+    left_hands = os.path.join(args.input, "*_left_hand.csv")
+    pose = os.path.join(args.input, "*_pose.csv")
     output_path = args.output
 
-    process_clustering(feature_csv_path=feature_csv_path, output_path=output_path)
+
+    process_clustering(feature_csv_path=right_hands, output_path=output_path+"_right_hand.csv")
+    process_clustering(feature_csv_path=left_hands, output_path=output_path+"_left_hand.csv")
+    process_clustering(feature_csv_path=pose, output_path=output_path+"_pose.csv")
