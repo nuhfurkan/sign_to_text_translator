@@ -20,15 +20,18 @@ def process_clustering(feature_csv_path: str, output_path: str):
     # List to store valid (non-empty) feature DataFrames
     valid_features = []
 
-    # Loop through each CSV file and check if it is empty
     for file in csv_files:
-        df = pd.read_csv(file)
-        
-        if df.empty:
-            # Skipping empty files without printing anything
+        if os.path.getsize(file) == 0:
+            # Skip truly empty files (no bytes at all)
             continue
-        else:
-            valid_features.append(df)
+        try:
+            df = pd.read_csv(file)
+            if not df.empty:
+                valid_features.append(df)
+        except pd.errors.EmptyDataError:
+            # Skip files that can't be parsed due to missing headers
+            continue
+
 
     # If no valid files were found, raise an error
     if not valid_features:
