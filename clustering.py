@@ -25,7 +25,8 @@ def process_clustering(feature_csv_path: str, output_path: str):
         df = pd.read_csv(file)
         
         if df.empty:
-            print(f"Skipping empty file: {file}")
+            # Skipping empty files without printing anything
+            continue
         else:
             valid_features.append(df)
 
@@ -76,22 +77,4 @@ def process_clustering(feature_csv_path: str, output_path: str):
     # Plot first 2 PCA components colored by cluster label
     # plt.figure(figsize=(10, 7))
     # plt.scatter(X_reduced[:, 0], X_reduced[:, 1], c=cluster_labels, cmap='Spectral', s=50)
-    # plt.title("Motif Clusters")
-    # plt.xlabel("PC1")
-    # plt.ylabel("PC2")
-    # plt.colorbar(label="Cluster")
-    # plt.grid(True)
-    # plt.tight_layout()
-    # plt.show()
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Cluster motif features using HDBSCAN.")
-    parser.add_argument('--input', type=str, required=True, help='Path to the directory containing CSV files.')
-    parser.add_argument('--output', type=str, required=True, help='Path to save the clustered results.')
-    args = parser.parse_args()
-
-    # Update paths based on command line arguments
-    feature_csv_path = args.input
-    output_path = args.output
-
-    process_clustering(feature_csv_path=feature_csv_path, output_path=output_path)
+    # plt.title("Motif Cluste
